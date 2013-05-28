@@ -1,10 +1,13 @@
 package com.werdn.haxeflixel;
 
 import haxe.io.Bytes;
+import haxe.io.Path;
+import neko.Lib;
+import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
-import haxe.zip.Entry;
 import haxe.zip.Reader;
+import haxe.zip.Entry;
 
 class CommandLine
 {
@@ -45,12 +48,12 @@ class ProjectCreator
 
 		if(args.length < 2 || cmd.help)
 		{
-			neko.Lib.println("Flixel project template creation tool.\n");
-			neko.Lib.println("haxelib run flixel [help] [-name \"Your Project Name\"] [-class MainProjectClass] [-screen WIDTH HEIGHT]\n");
-			neko.Lib.println("\thelp - this screen");
-			neko.Lib.println("\t-name \"Your Project Name\"");
-			neko.Lib.println("\t-class MainProjectClass");
-			neko.Lib.println("\t-screen WIDTH HEIGHT");
+			Lib.println("Flixel project template creation tool.\n");
+			Lib.println("haxelib run flixel [help] [-name \"Your Project Name\"] [-class MainProjectClass] [-screen WIDTH HEIGHT]\n");
+			Lib.println("\thelp - this screen");
+			Lib.println("\t-name \"Your Project Name\"");
+			Lib.println("\t-class MainProjectClass");
+			Lib.println("\t-screen WIDTH HEIGHT");
 		}
 		else
 		{
@@ -101,7 +104,7 @@ class ProjectCreator
 	 */
 	private function trimPath(path:String) 
 	{
-		return new haxe.io.Path(path).dir;
+		return new Path(path).dir;
 	}
 
 	/**
@@ -122,9 +125,9 @@ class ProjectCreator
 			{
 				fileName = fileName.substr(0, -1);
 				neko.Lib.println("Directory: " + fileName);
-				if(!sys.FileSystem.exists(cmd.projectDir + "/" +fileName))
+				if(!FileSystem.exists(cmd.projectDir + "/" +fileName))
 				{
-					sys.FileSystem.createDirectory(cmd.projectDir + "/" +fileName);
+					FileSystem.createDirectory(cmd.projectDir + "/" +fileName);
 				}
 			}
 			else

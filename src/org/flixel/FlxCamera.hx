@@ -1,16 +1,17 @@
 package org.flixel;
 
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.display.Sprite;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.display.Sprite;
 import nme.display.Tilesheet;
-import nme.geom.ColorTransform;
-import nme.geom.Point;
-import nme.geom.Rectangle;
+import flash.geom.ColorTransform;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 import org.flixel.system.layer.Atlas;
 import org.flixel.system.layer.DrawStackItem;
 import org.flixel.system.layer.TileSheetData;
+import org.flixel.system.layer.TileSheetExt;
 
 /**
  * The camera class is used to display the game's visuals in the Flash player.
@@ -388,7 +389,7 @@ class FlxCamera extends FlxBasic
 				#end
 				// TODO: currItem.antialiasing
 				currItem.atlas._tileSheetData.tileSheet.drawTiles(this._canvas.graphics, data, (this.antialiasing/* || currItem.antialiasing*/), tempFlags);
-				TileSheetData._DRAWCALLS++;
+				TileSheetExt._DRAWCALLS++;
 			}
 			currItem = currItem.next;
 		}
@@ -505,7 +506,6 @@ class FlxCamera extends FlxBasic
 		alpha = 1.0;
 		angle = 0.0;
 		antialiasing = false;
-
 	}
 	
 	/**
@@ -847,15 +847,8 @@ class FlxCamera extends FlxBasic
 	 * @param	OnComplete	A function you want to run when the flash finishes.
 	 * @param	Force		Force the effect to reset.
 	 */
-	public function flash(?Color:Int = 0xffffffff, Duration:Float = 1, OnComplete:Void->Void = null, Force:Bool = false):Void
+	public function flash(Color:Int = 0xffffffff, Duration:Float = 1, OnComplete:Void->Void = null, Force:Bool = false):Void
 	{
-		#if !flash
-		if (Color == null)
-		{
-			Color = FlxG.WHITE;
-		}
-		#end
-		
 		if (!Force && (_fxFlashAlpha > 0.0))
 		{
 			return;
@@ -878,15 +871,8 @@ class FlxCamera extends FlxBasic
 	 * @param	OnComplete	A function you want to run when the fade finishes.
 	 * @param	Force		Force the effect to reset.
 	 */
-	public function fade(?Color:Int = 0xff000000, Duration:Float = 1, FadeIn:Bool = false, OnComplete:Void->Void = null, Force:Bool = false):Void
+	public function fade(Color:Int = 0xff000000, Duration:Float = 1, FadeIn:Bool = false, OnComplete:Void->Void = null, Force:Bool = false):Void
 	{
-		#if !flash
-		if (Color == null)
-		{
-			Color = FlxG.BLACK;
-		}
-		#end
-		
 		if (!Force && (_fxFadeAlpha > 0.0))
 		{
 			return;
@@ -1056,7 +1042,9 @@ class FlxCamera extends FlxBasic
 			colorTransform.blueMultiplier = (color & 0xff) / 255;
 			_flashBitmap.transform.colorTransform = colorTransform;
 		}
-		#elseif
+		#else
+		//var colorTransform:ColorTransform = _canvas.transform.colorTransform;
+		//_canvas.transform.colorTransform = colorTransform;
 		red = (color >> 16) / 255;
 		green = (color >> 8 & 0xff) / 255;
 		blue = (color & 0xff) / 255;
@@ -1103,10 +1091,7 @@ class FlxCamera extends FlxBasic
 		
 		//camera positioning fix from bomski (https://github.com/Beeblerox/HaxeFlixel/issues/66)
 		_flashOffsetX = width * 0.5 * X;
-		_flashOffsetY = height * 0.5 * Y;
-		
-		_flashSprite.x = x + _flashOffsetX;
-		_flashSprite.y = y + _flashOffsetY;
+		_flashOffsetY = height * 0.5 * Y;	
 	}
 	
 	/**
@@ -1150,7 +1135,6 @@ class FlxCamera extends FlxBasic
 		// end of fix
 		
 		targetGraphics.beginFill(Color, FxAlpha);
-		
 		targetGraphics.drawRect(0, 0, width, height);
 		targetGraphics.endFill();
 	#end

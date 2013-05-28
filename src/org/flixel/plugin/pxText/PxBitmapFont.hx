@@ -1,13 +1,13 @@
 package org.flixel.plugin.pxText;
 
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.geom.ColorTransform;
-import nme.geom.Matrix;
-import nme.geom.Point;
-import nme.geom.Rectangle;
-import org.flixel.FlxG;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.geom.ColorTransform;
+import flash.geom.Matrix;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 import org.flixel.FlxColorUtils;
+import org.flixel.FlxG;
 import org.flixel.system.layer.Node;
 
 /**
@@ -320,7 +320,11 @@ class PxBitmapFont
 		resultBitmapData.copyPixels(pBitmapData, pBitmapData.rect, ZERO_POINT);
 		
 		var pixelColor:Int;
+		#if (flash || js)
 		var bgColor32:Int = pBitmapData.getPixel(0, 0);
+		#else
+		var bgColor32:Int = pBitmapData.getPixel32(0, 0);
+		#end
 		
 		cy = 0;
 		while (cy < pBitmapData.height)
@@ -331,7 +335,7 @@ class PxBitmapFont
 				pixelColor = pBitmapData.getPixel32(cx, cy);
 				if (pixelColor == bgColor32)
 				{
-					resultBitmapData.setPixel32(cx, cy, FlxG.TRANSPARENT);
+					resultBitmapData.setPixel32(cx, cy, FlxColorUtils.TRANSPARENT);
 				}
 				cx++;
 			}
@@ -563,12 +567,12 @@ class PxBitmapFont
 	 * @param	pOffsetY	Y position of thext output.
 	 */
 	#if flash 
-	public function render(pBitmapData:BitmapData, pFontData:Array<BitmapData>, pText:String, pColor:Int, pOffsetX:Int, pOffsetY:Int, pLetterSpacing:Int):Void 
+	public function render(pBitmapData:BitmapData, pFontData:Array<BitmapData>, pText:String, pColor:UInt, pOffsetX:Int, pOffsetY:Int, pLetterSpacing:Int):Void 
 	#else
 	public function render(atlasName:String, drawData:Array<Float>, pText:String, pColor:Int, pSecondColor:Int, pAlpha:Float, pOffsetX:Float, pOffsetY:Float, pLetterSpacing:Int, pScale:Float, pUseColor:Bool = true):Void 
 	#end
 	{
-		#if !flash
+	#if !flash
 		
 		var colorMultiplier:Float = 1 / 255;
 		var red:Float = colorMultiplier;
@@ -587,11 +591,10 @@ class PxBitmapFont
 		green *= (pSecondColor >> 8 & 0xff);
 		blue *= (pSecondColor & 0xff);
 		
-		#end
+	#end
 		
 		_point.x = pOffsetX;
 		_point.y = pOffsetY;
-		
 		#if flash
 		var glyph:BitmapData;
 		#else

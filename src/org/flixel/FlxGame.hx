@@ -1,22 +1,24 @@
 package org.flixel;
 
-import nme.Lib;
+import flash.events.ProgressEvent;
+import flash.Lib;
 import nme.Assets;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.display.Sprite;
-import nme.display.StageAlign;
-import nme.display.StageScaleMode;
-import nme.events.Event;
-import nme.media.Sound;
-import nme.text.TextField;
-import nme.text.TextFormat;
-import nme.text.TextFormatAlign;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.display.Sprite;
+import flash.display.StageAlign;
+import flash.display.StageScaleMode;
+import flash.events.Event;
+import flash.media.Sound;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import flash.text.TextFormatAlign;
 import org.flixel.plugin.pxText.PxBitmapFont;
 import org.flixel.system.layer.Atlas;
 import org.flixel.system.layer.TileSheetData;
 import org.flixel.system.input.FlxInputs;
+import org.flixel.system.layer.TileSheetExt;
 
 #if flash
 import flash.text.AntiAliasType;
@@ -38,7 +40,6 @@ import org.flixel.system.FlxDebugger;
  */
 class FlxGame extends Sprite
 {
-	
 	private var junk:String;
 	/**
 	 * Internal var used to temporarily disable sound hot keys without overriding useSoundHotKeys.
@@ -103,7 +104,7 @@ class FlxGame extends Sprite
 	 */
 	public var _requestedReset:Bool;
 	
-	#if !FLX_NO_FOCUS_LOST_SCREEN
+	#if !FLX_NO_FOCUS_LOST_SCREEN 
 	/**
 	 * The "focus lost" screen (see <code>createFocusScreen()</code>).
 	 */
@@ -197,13 +198,12 @@ class FlxGame extends Sprite
 		
 		//super high priority init stuff (focus, mouse, etc)
 		_lostFocus = false;
-		
-		#if !FLX_NO_FOCUS_LOST_SCREEN
+		#if !FLX_NO_FOCUS_LOST_SCREEN 
 		_focus = new Sprite();
 		_focus.visible = false;
 		#end
 		
-		#if !FLX_NO_SOUND_TRAY
+		#if !FLX_NO_SOUND_TRAY 
 		_soundTray = new Sprite();
 		#end
 		
@@ -243,7 +243,7 @@ class FlxGame extends Sprite
 		addEventListener(Event.ADDED_TO_STAGE, create);
 	}
 	
-	#if !FLX_NO_SOUND_TRAY
+	#if !FLX_NO_SOUND_TRAY 
 	/**
 	 * Makes the little volume tray slide out.
 	 * @param	Silent	Whether or not it should beep.
@@ -277,7 +277,8 @@ class FlxGame extends Sprite
 	 */
 	private function onFocus(FlashEvent:Event = null):Void
 	{
-		if (!FlxG.autoPause) {
+		if (!FlxG.autoPause) 
+		{
 			_state.onFocus();
 			return;
 		}
@@ -286,7 +287,7 @@ class FlxGame extends Sprite
 		
 		#if !FLX_NO_FOCUS_LOST_SCREEN
 		_focus.visible = false;
-		#end
+		#end 
 		
 		stage.frameRate = _flashFramerate;
 		FlxG.resumeSounds();
@@ -299,7 +300,8 @@ class FlxGame extends Sprite
 	 */
 	private function onFocusLost(FlashEvent:Event = null):Void
 	{
-		if (!FlxG.autoPause) {
+		if (!FlxG.autoPause) 
+		{
 			_state.onFocusLost();
 			return;
 		}
@@ -308,7 +310,7 @@ class FlxGame extends Sprite
 		
 		#if !FLX_NO_FOCUS_LOST_SCREEN
 		_focus.visible = true;
-		#end
+		#end 
 		
 		stage.frameRate = 10;
 		FlxG.pauseSounds();
@@ -409,8 +411,8 @@ class FlxGame extends Sprite
 		#if(cpp && thread)
 		_stateSwitchRequested = true;
 		#end
-	}
-	
+	} 
+
 	/**
 	 * If there is a state change requested during the update loop,
 	 * this function handles actual destroying the old state and related processes,
@@ -419,11 +421,10 @@ class FlxGame extends Sprite
 	private function switchState():Void
 	{ 
 		//Basic reset stuff
-		#if !flash
 		PxBitmapFont.clearStorage();
 		Atlas.clearAtlasCache();
 		TileSheetData.clear();
-		#end
+		
 		FlxG.clearBitmapCache();
 		FlxG.resetCameras();
 		FlxG.resetInput();
@@ -444,6 +445,9 @@ class FlxGame extends Sprite
 			timerManager.clear();
 		}
 		
+		#if !FLX_NO_MOUSE
+		var mouseVisibility:Bool = FlxG.mouse.visible;
+		#end
 		//Destroy the old state (if there is an old state)
 		if (_state != null)
 		{
@@ -452,10 +456,13 @@ class FlxGame extends Sprite
 		
 		//Finally assign and create the new state
 		_state = _requestedState;
+		#if !FLX_NO_MOUSE
+		_state.useMouse = mouseVisibility;
+		#end
 		_state.create();
 		
-		#if(cpp && thread)
-		_stateSwitchRequested = false;
+		#if (cpp && thread) 
+		_stateSwitchRequested = false; 
 		#end
 	}
 	
@@ -528,7 +535,7 @@ class FlxGame extends Sprite
 	}
 	#end
 	
-	#if !FLX_NO_SOUND_TRAY 
+	#if !FLX_NO_SOUND_TRAY
 	/**
 	 * This function just updates the soundtray object.
 	 */
@@ -549,8 +556,8 @@ class FlxGame extends Sprite
 				
 				//Save sound preferences
 				_prefsSave.data.mute = FlxG.mute;
-				_prefsSave.data.volume = FlxG.volume;
-				_prefsSave.flush();
+				_prefsSave.data.volume = FlxG.volume; 
+				_prefsSave.flush(); 
 			}
 		}
 	}
@@ -664,7 +671,7 @@ class FlxGame extends Sprite
 		#end
 
 		#if !flash
-		TileSheetData._DRAWCALLS = 0;
+		TileSheetExt._DRAWCALLS = 0;
 		#end
 		
 		FlxG.lockCameras();
@@ -672,7 +679,7 @@ class FlxGame extends Sprite
 		#if (cpp && thread)
 		// Only draw the state if a new state hasn't been requested
 		if (!_stateSwitchRequested)
-		#end
+		#end 
 		_state.draw();
 		
 		#if !FLX_NO_DEBUG
@@ -688,7 +695,7 @@ class FlxGame extends Sprite
 		#if !FLX_NO_DEBUG
 		if (_debuggerUp)
 		{
-			_debugger.perf.drawCalls(TileSheetData._DRAWCALLS);
+			_debugger.perf.drawCalls(TileSheetExt._DRAWCALLS);
 		}
 		#end
 		#end
@@ -732,8 +739,8 @@ class FlxGame extends Sprite
 		FlxG.keyDebugger = [192, 220];
 		FlxG.keyVolumeUp = [107, 187];
 		FlxG.keyVolumeDown = [109, 189];
-		FlxG.keyMute = [48, 96];
-
+		FlxG.keyMute = [48, 96]; 
+		
 		FlxInputs.init();
 		
 		FlxG.autoPause = true;
@@ -847,21 +854,21 @@ class FlxGame extends Sprite
 	private function loadSoundPrefs():Void
 	{
 		if (_prefsSave.data.volume != null)
-			FlxG.volume = _prefsSave.data.sound.volume;
+			FlxG.volume = _prefsSave.data.volume;
 		else 
-			FlxG.volume = 0.5;
-			
+			FlxG.volume = 0.5; 
+		
 		if (_prefsSave.data.mute != null)
-			FlxG.mute = _prefsSave.data.sound.mute;
+			FlxG.mute = _prefsSave.data.mute;
 		else 
-			FlxG.mute = false;
+			FlxG.mute = false; 
 	}
 	
 	#if !FLX_NO_FOCUS_LOST_SCREEN
 	/**
 	 * Sets up the darkened overlay with the big white "play" button that appears when a flixel game loses focus.
 	 */
-	private function createFocusScreen():Void
+	public function createFocusScreen():Void
 	{
 		var gfx:Graphics = _focus.graphics;
 		var screenWidth:Int = Std.int(FlxG.width * FlxCamera.defaultZoom);
@@ -900,8 +907,8 @@ class FlxGame extends Sprite
 		_focus.addChild(logo);
 		
 		addChild(_focus);
+		#end
 	}
-	#end
 
 	#if !FLX_NO_DEBUG
 	public var debugger(get_debugger, null):FlxDebugger;

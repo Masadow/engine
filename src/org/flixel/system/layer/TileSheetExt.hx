@@ -1,13 +1,15 @@
 package org.flixel.system.layer;
 
-import nme.display.BitmapData;
+import haxe.ds.ObjectMap;
+import flash.display.BitmapData;
 import nme.display.Tilesheet;
-import nme.geom.Point;
-import nme.geom.Rectangle;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 
+// TODO: check image caching for tilesheets and their disposing
 class TileSheetExt extends Tilesheet
 {
-	private static var _tileSheetCache:Map<BitmapData, TileSheetExt> = new Map<BitmapData, TileSheetExt>();
+	private static var _tileSheetCache:ObjectMap<BitmapData, TileSheetExt> = new ObjectMap<BitmapData, TileSheetExt>();
 	
 	public static var _DRAWCALLS:Int = 0;
 	
@@ -52,10 +54,15 @@ class TileSheetExt extends Tilesheet
 	{
 		for (key in _tileSheetCache.keys())
 		{
-			var temp:TileSheetExt = _tileSheetCache.get(key);
-			_tileSheetCache.remove(key);
-			temp.destroy();
+			if (key != null)
+			{
+				var temp:TileSheetExt = _tileSheetCache.get(key);
+				_tileSheetCache.remove(key);
+				temp.destroy();
+			}
 		}
+		
+		_tileSheetCache = new ObjectMap<BitmapData, TileSheetExt>();
 	}
 	
 	private var _numTiles:Int;

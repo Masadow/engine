@@ -1,6 +1,6 @@
 package org.flixel;
 
-import nme.display.BitmapData;
+import flash.display.BitmapData;
 import org.flixel.system.layer.Atlas;
 import org.flixel.system.layer.DrawStackItem;
 import org.flixel.system.layer.TileSheetData;
@@ -36,6 +36,10 @@ class FlxState extends FlxGroup
 	public var persistantDraw:Bool;
 	
 	private var _subState:FlxSubState;
+	/**
+	 * Current substate.
+	 * Substates also can have substates
+	 */
 	public var subState(get_subState, null):FlxSubState;
 	
 	private function get_subState():FlxSubState 
@@ -43,6 +47,9 @@ class FlxState extends FlxGroup
 		return _subState;
 	}
 	
+	/**
+	 * Background color of this state
+	 */
 	private var _bgColor:Int;
 	public var bgColor(get_bgColor, set_bgColor):Int;
 	
@@ -56,13 +63,39 @@ class FlxState extends FlxGroup
 		return FlxG.bgColor = value;
 	}
 	
+	private var _useMouse:Bool = false;
+	
+	/**
+	 * Whether to show mouse pointer or not
+	 */
+	public var useMouse(get_useMouse, set_useMouse):Bool;
+	private function get_useMouse():Bool { return _useMouse; }
+	private function set_useMouse(value:Bool):Bool
+	{
+		_useMouse = value;
+		this.updateMouseVisibility();
+		return value;
+	}
+	private function updateMouseVisibility():Void
+	{
+		#if mobile
+		FlxG.mouse.hide();
+		#else
+		if (_useMouse) { FlxG.mouse.show(); }
+		else { FlxG.mouse.hide(); }
+		#end
+	}
+	
+	/**
+	 * State constructor
+	 */
 	public function new()
 	{
 		super();
 		
 		persistantUpdate = false;
 		persistantDraw = true;
-		_bgColor = FlxG.bgColor;
+		this.useMouse = false;
 	}
 	
 	/**
@@ -114,21 +147,27 @@ class FlxState extends FlxGroup
 	}
 	
 	/**
-	 * Manually close the sub-state (will always give the reason FlxSubState.CLOSED_BY_PARENT)
+	 * Manually close the sub-state
 	*/
-	public function closeSubState():Void
+	public function closeSubState(destroy:Bool = true):Void
 	{
-		this.setSubState(null);
+		this.setSubState(null, null, destroy);
 	}
 	
-	public function setSubState(requestedState:FlxSubState, closeCallback:Void->Void = null):Void
+	/**
+	 * Set substate for this state
+	 * @param	requestedState		substate to add
+	 * @param	closeCallback		close callback function, which will be called after closing requestedState
+	 * @param	destroyPrevious		whether to destroy previuos substate (if there is one) or not
+	 */
+	public function setSubState(requestedState:FlxSubState, closeCallback:Void->Void = null, destroyPrevious:Bool = true):Void
 	{
 		if (_subState == requestedState)	return;
 
 		//Destroy the old state (if there is an old state)
 		if(_subState != null)
 		{
-			_subState.close();
+			_subState.close(destroyPrevious);
 		}
 
 		//Finally assign and create the new state (or set it to null)
@@ -147,19 +186,33 @@ class FlxState extends FlxGroup
 			{ 
 				FlxG.resetInput();
 			}
-			_subState.create();
+			
+			if (!_subState.initialized)
+			{
+				_subState.initialize();
+				_subState.create();
+			}
 		}
 	}
-
-	private function subStateCloseHandler():Void
+	
+	/**
+	 * Helper method for closing substate
+	 * @param	destroy		whether to destroy current substate (by default) or leave it as is, so closed substate can be reused many times
+	 */
+	private function subStateCloseHandler(destroy:Bool = true):Void
 	{
 		if (_subState.closeCallback != null)
 		{
 			_subState.closeCallback();
 		}
 		
-		_subState.destroy();
+		if (destroy)
+		{
+			_subState.destroy();
+		}
 		_subState = null;
+		
+		this.updateMouseVisibility();
 	}
 
 	override public function destroy():Void
@@ -175,7 +228,6 @@ class FlxState extends FlxGroup
 	 */
 	public function getAtlasFor(KeyInBitmapCache:String):Atlas
 	{
-		#if !flash
 		var bm:BitmapData = FlxG._cache.get(KeyInBitmapCache);
 		if (bm != null)
 		{
@@ -188,7 +240,7 @@ class FlxState extends FlxGroup
 			throw "There isn't bitmapdata in cache with key: " + KeyInBitmapCache;
 			#end
 		}
-		#end
+		
 		return null;
 	}
 	

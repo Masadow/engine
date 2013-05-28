@@ -26,22 +26,78 @@ class FlxParticle extends FlxSprite
 	public var friction:Float;
 	
 	/**
-	 * If this is set to true, particles will slowly fade away by 
+	 * If this is set to true, particles will slowly fade away by
 	 * decreasing their alpha value based on their lifespan.
-	 */
-	public var fadingAway:Bool = false;
-	
+	*/
+	public var useFading:Bool = false;
+
 	/**
-	 * If this is set to true, particles will slowly decrease in scale 
+	 * If this is set to true, particles will slowly decrease in scale
 	 * based on their lifespan.
-	 * WARNING: This severely impacts performance.
-	 */
-	public var decreasingSize:Bool = false;
+	 * WARNING: This severely impacts performance on flash target.
+	*/
+	public var useScaling:Bool = false;
 	
 	/**
-	 * Helper variable for fading and sizeDecreasing effects.
+	 * If this is set to true, particles will change their color
+	 * based on their lifespan and start and range color components values.
+	 */
+	public var useColoring:Bool = false;
+	
+	/**
+	 * Helper variable for fading, scaling and coloring particle.
 	 */
 	public var maxLifespan:Float;
+	
+	/**
+	 * Start value for particle's alpha
+	 */
+	public var startAlpha:Float;
+	
+	/**
+	 * Range of alpha change during particle's life
+	 */
+	public var rangeAlpha:Float;
+	
+	/**
+	 * Start value for particle's scale.x and scale.y
+	 */
+	public var startScale:Float;
+	
+	/**
+	 * Range of scale change during particle's life
+	 */
+	public var rangeScale:Float;
+	
+	/**
+	 * Start value for particle's red color component
+	 */
+	public var startRed:Float;
+	
+	/**
+	 * Start value for particle's green color component
+	 */
+	public var startGreen:Float;
+	
+	/**
+	 * Start value for particle's blue color component
+	 */
+	public var startBlue:Float;
+	
+	/**
+	 * Range of red color component change during particle's life
+	 */
+	public var rangeRed:Float;
+	
+	/**
+	 * Range of green color component change during particle's life
+	 */
+	public var rangeGreen:Float;
+	
+	/**
+	 * Range of blue color component change during particle's life
+	 */
+	public var rangeBlue:Float;
 	
 	/**
 	 * Instantiate a new particle.  Like <code>FlxSprite</code>, all meaningful creation
@@ -76,11 +132,6 @@ class FlxParticle extends FlxSprite
 		last.x = x;
 		last.y = y;
 		
-		if ((path != null) && (pathSpeed != 0) && (path.nodes[_pathNodeIndex] != null))
-		{
-			updatePathMotion();
-		}
-		
 		//lifespan behavior
 		if (lifespan > 0)
 		{
@@ -90,18 +141,30 @@ class FlxParticle extends FlxSprite
 				kill();
 			}
 			
-			// Fading away
-			if (fadingAway)
+			var lifespanRatio:Float = (1 - lifespan / maxLifespan);
+			
+			// Fading
+			if (useFading)
 			{
-				alpha -= (FlxG.elapsed / maxLifespan);
+				alpha = startAlpha + lifespanRatio * rangeAlpha;
 			}
 			
-			// Decreasing size
-			if (decreasingSize) 
+			// Changing size
+			if (useScaling)
 			{
-				scale.x = scale.y -= (FlxG.elapsed / maxLifespan);
+				scale.x = scale.y = startScale + lifespanRatio * rangeScale;
 			}
-		
+			
+			// Tinting
+			if (useColoring)
+			{
+				var redComp:Float = startRed + lifespanRatio * rangeRed;
+				var greenComp:Float = startGreen + lifespanRatio * rangeGreen;
+				var blueComp:Float = startBlue + lifespanRatio * rangeBlue;
+				
+				color = Std.int(255 * redComp) << 16 | Std.int(255 * greenComp) << 8 | Std.int(255 * blueComp);
+			}
+			
 			//simpler bounce/spin behavior for now
 			if (touching != 0)
 			{
@@ -141,11 +204,7 @@ class FlxParticle extends FlxSprite
 		
 		if (exists && alive)
 		{
-			if (moves)
-			{
-				updateMotion();
-			}
-			
+			updateMotion();
 			wasTouching = touching;
 			touching = FlxObject.NONE;
 			
@@ -153,10 +212,18 @@ class FlxParticle extends FlxSprite
 		}
 	}
 	
+	override public function reset(X:Float, Y:Float):Void 
+	{
+		super.reset(X, Y);
+		
+		alpha = 1.0;
+		scale.x = scale.y = 1.0;
+		color = 0xffffff;
+	}
+	
 	/**
 	 * Triggered whenever this object is launched by a <code>FlxEmitter</code>.
 	 * You can override this to add custom behavior like a sound or AI or something.
 	 */
-	public function onEmit():Void { }
-	
+	public function onEmit():Void { }	
 }

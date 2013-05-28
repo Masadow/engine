@@ -1,14 +1,14 @@
 package org.flixel.system.debug;
 
 import nme.Assets;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Sprite;
-import nme.events.Event;
-import nme.events.IOErrorEvent;
-import nme.events.MouseEvent;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Sprite;
+import flash.events.Event;
+import flash.events.IOErrorEvent;
+import flash.events.MouseEvent;
 #if !FLX_NO_MOUSE
-import nme.ui.Mouse;
+import flash.ui.Mouse;
 #end
 
 import org.flixel.FlxAssets;
@@ -16,10 +16,10 @@ import org.flixel.FlxAssets;
 import flash.net.FileFilter;
 import flash.net.FileReference;
 #end
-import nme.text.TextField;
-import nme.text.TextFormat;
-import nme.text.TextFormatAlign;
-import nme.utils.ByteArray;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import flash.text.TextFormatAlign;
+import flash.utils.ByteArray;
 
 import org.flixel.FlxG;
 import org.flixel.FlxU;
@@ -35,7 +35,7 @@ class VCR extends Sprite
 	#if flash
 	static private var FILE_TYPES:Array<FileFilter> = [new FileFilter("Flixel Game Recording", "*.fgr")];
 	#end
-	static private var DEFAULT_FILE_NAME:String = "replay.fgr";
+	static private inline var DEFAULT_FILE_NAME:String = "replay.fgr";
 	
 	/**
 	 * Whether the debugger has been paused. 

@@ -1,11 +1,11 @@
 package org.flixel.system.layer;
 
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.geom.Point;
-import nme.geom.Rectangle;
-import org.flixel.FlxG;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 import org.flixel.FlxColorUtils;
+import org.flixel.FlxG;
 import org.flixel.system.layer.TileSheetData;
 
 /**
@@ -15,7 +15,13 @@ import org.flixel.system.layer.TileSheetData;
 class Atlas
 {
 	/**
-	 * Storate for all created atlases in current state
+	 * Memory managment related var. 
+	 * If if will have value <= 0 then this atlas will be destoyed.
+	 */
+	public var _useCount:Int;
+	
+	/**
+	 * Storage for all created atlases in current state
 	 */
 	private static var _atlasCache:Map<String, Atlas> = new Map<String, Atlas>();
 	
@@ -77,8 +83,8 @@ class Atlas
 		this.borderY = borderY;
 		
 		_tileSheetData = createTileSheetData(atlasBitmapData);
-		
 		_atlasCache.set(name, this);
+		_useCount = 0;
 	}
 
 	/**
@@ -105,9 +111,11 @@ class Atlas
 	 * Gets atlas from cache or creates new one.
 	 * @param	Key			atlas' key (name)
 	 * @param	BmData		atlas' bitmapdata
+	 * @param	Unique		Optional, whether the atlas should be a unique instance in the atlas cache. Default is false.
+	 * @param	Width		The width of atlas
+	 * @param	Height		The height of atlas
 	 * @return	atlas from cache
 	 */
-	// TODO: redocument this
 	public static function getAtlas(Key:String, BmData:BitmapData, Unique:Bool = false, Width:Int = 0, Height:Int = 0):Atlas
 	{
 		if (BmData == null && Width <= 0 && Height <= 0)
@@ -517,7 +525,7 @@ class Atlas
 		deleteSubtree(root);
 		
 		root = new Node(this, new Rectangle(0, 0, rootWidth, rootHeight));
-		atlasBitmapData.fillRect(root.rect, FlxG.TRANSPARENT);
+		atlasBitmapData.fillRect(root.rect, FlxColorUtils.TRANSPARENT);
 		nodes = new Map<String, Node>();
 	}
 	

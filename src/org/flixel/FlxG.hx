@@ -1,21 +1,22 @@
 package org.flixel;
 
 import nme.Assets;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.display.Sprite;
-import nme.display.Stage;
-import nme.display.StageDisplayState;
-import nme.errors.Error;
-import nme.geom.Matrix;
-import nme.geom.Point;
-import nme.geom.Rectangle;
-import nme.media.Sound;
-import nme.media.SoundTransform;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.display.Sprite;
+import flash.display.Stage;
+import flash.display.StageDisplayState;
+import flash.errors.Error;
+import flash.geom.Matrix;
+import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.media.Sound;
+import flash.media.SoundTransform;
 import org.flixel.system.debug.Console;
-import org.flixel.system.debug.LogStyle;
+import org.flixel.system.debug.LogStyle; 
 import org.flixel.system.debug.Log;
+import org.flixel.system.FlxWindow;
 import org.flixel.system.layer.Atlas;
 import org.flixel.system.layer.TileSheetData;
 import org.flixel.plugin.pxText.PxBitmapFont;
@@ -41,7 +42,7 @@ import org.flixel.system.input.FlxKeyboard;
 #if !FLX_NO_MOUSE
 import org.flixel.system.input.FlxMouse;
 #end
-#if (!FLX_NO_JOYSTICK && (cpp || neko))
+#if !FLX_NO_JOYSTICK
 import org.flixel.system.input.FlxJoystickManager;
 #end
 
@@ -79,13 +80,13 @@ class FlxG
 	 * Assign a major version to your library.
 	 * Appears before the decimal in the console.
 	 */
-	static public inline var LIBRARY_MAJOR_VERSION:String = "1";
+	static public inline var LIBRARY_MAJOR_VERSION:String = "2";
 	
 	/**
 	 * Assign a minor version to your library.
 	 * Appears after the decimal in the console.
 	 */
-	static public inline var LIBRARY_MINOR_VERSION:String = "10-dev";
+	static public inline var LIBRARY_MINOR_VERSION:String = "0.0-alpha";
 	
 	#if !FLX_NO_DEBUG
 	/**
@@ -120,33 +121,31 @@ class FlxG
 	#end
 	
 	/**
-	 * Some handy color presets.  Less glaring than pure RGB full values.
-	 * Primarily used in the visual debugger mode for bounding box displays.
-	 * Red is used to indicate an active, movable, solid object.
+	 * Reference to FlxColorUtils.RED for backwards compatibility.
 	 */
 	static public inline var RED:Int = FlxColorUtils.RED;
 	/**
-	 * Green is used to indicate solid but immovable objects.
+	 * Reference to FlxColorUtils.GREEN for backwards compatibility.
 	 */
 	static public inline var GREEN:Int = FlxColorUtils.GREEN;
 	/**
-	 * Blue is used to indicate non-solid objects.
+	 * Reference to FlxColorUtils.BLUE for backwards compatibility.
 	 */
 	static public inline var BLUE:Int = FlxColorUtils.BLUE;
 	/**
-	 * Pink is used to indicate objects that are only partially solid, like one-way platforms.
+	 * Reference to FlxColorUtils.PINK for backwards compatibility. 
 	 */
 	static public inline var PINK:Int = FlxColorUtils.PINK;
 	/**
-	 * White... for white stuff.
+	 * Reference to FlxColorUtils.WHITE for backwards compatibility.
 	 */
 	static public inline var WHITE:Int = FlxColorUtils.WHITE;
 	/**
-	 * And black too.
+	 * Reference to FlxColorUtils.BLACK for backwards compatibility.
 	 */
 	static public inline var BLACK:Int = FlxColorUtils.BLACK;
 	/**
-	 * Totally transparent color. Usefull for creating transparent BitmapData
+	 * Reference to FlxColorUtils.TRANSPARENT for backwards compatibility. 
 	 */
 	static public inline var TRANSPARENT:Int = FlxColorUtils.TRANSPARENT;
 	
@@ -169,7 +168,7 @@ class FlxG
 	 * Use FLX_NO_FOCUS_LOST_SCREEN if you only want to get rid of the default
 	 * pause screen. Override onFocus() and onFocusLost() for your own 
 	 * behaviour in your state
-	 * @default true
+	 * @default true 
 	 */
 	static public var autoPause:Bool;
 	/**
@@ -297,25 +296,25 @@ class FlxG
 	 */
 	static public var keys:FlxKeyboard;
 	/**
-	 * The key codes used to open the debugger. (via nme.ui.Keyboard)
+	 * The key codes used to open the debugger. (via flash.ui.Keyboard)
 	 * @default [192, 220]
 	 */
 	static public var keyDebugger:Array<Int>;
 	/**
-	 * The key codes used to increase volume. (via nme.ui.Keyboard)
+	 * The key codes used to increase volume. (via flash.ui.Keyboard)
 	 * @default [107, 187]
 	 */
 	static public var keyVolumeUp:Array<Int>;
 	/**
-	 * The key codes used to decrease volume. (via nme.ui.Keyboard)
+	 * The key codes used to decrease volume. (via flash.ui.Keyboard)
 	 * @default [109, 189]
 	 */
 	static public var keyVolumeDown:Array<Int>;
 	/**
-	 * The key codes used to mute / unmute the game. (via nme.ui.Keyboard)
+	 * The key codes used to mute / unmute the game. (via flash.ui.Keyboard)
 	 * @default [48, 96]
-	 */
-	static public var keyMute:Array<Int>;
+	*/
+	static public var keyMute:Array<Int>; 
 	#end
 
 	#if !FLX_NO_TOUCH
@@ -325,7 +324,7 @@ class FlxG
 	public static var touchManager:FlxTouchManager;
 	#end
 	
-	#if (!FLX_NO_JOYSTICK && (cpp || neko))
+	#if (!FLX_NO_JOYSTICK && (cpp||neko))
 	/**
 	 * A reference to a <code>JoystickManager</code> object. Important for input!
 	 * Set the instance in the FlxInputs class
@@ -340,7 +339,7 @@ class FlxG
 	
 	/**
 	 * Log data to the debugger. Example: <code>FlxG.log("Test", "1", "2", "3");</code> - will turn into "Test 1 2 3".
-	 * Infinite amount of arguments allowed, they will be pieced together to one String.
+	 * Infinite amount of arguments allowed, they will be pieced together to one String. 
 	 */
 	static public var log:Dynamic;
 	
@@ -354,7 +353,7 @@ class FlxG
 	
 	/**
 	 * Add a warning to the debugger. Example: <code>FlxG.warn("Test", "1", "2", "3");</code> - will turn into "[WARNING] Test 1 2 3".
-	 * Infinite amount of arguments allowed, they will be pieced together to one String.
+	 * Infinite amount of arguments allowed, they will be pieced together to one String. 
 	 */
 	static public var warn:Dynamic;
 	
@@ -368,7 +367,7 @@ class FlxG
 	
 	/**
 	 * Add an error to the debugger. Example: <code>FlxG.error("Test", "1", "2", "3");</code> - will turn into "[ERROR] Test 1 2 3".
-	 * Infinite amount of arguments allowed, they will be pieced together to one String.
+	 * Infinite amount of arguments allowed, they will be pieced together to one String. 
 	 */
 	static public var error:Dynamic;
 	
@@ -382,7 +381,7 @@ class FlxG
 	
 	/**
 	 * Add a notice to the debugger. Example: <code>FlxG.notice("Test", "1", "2", "3");</code> - will turn into "[NOTICE] Test 1 2 3".
-	 * Infinite amount of arguments allowed, they will be pieced together to one String.
+	 * Infinite amount of arguments allowed, they will be pieced together to one String. 
 	 */
 	static public var notice:Dynamic;
 	
@@ -396,17 +395,17 @@ class FlxG
 	
 	/**
 	 * Add an advanced log message to the debugger by also specifying a <code>LogStyle</code>. Backend to <code>FlxG.log(), FlxG.warn(), FlxG.error() and FlxG.notice()</code>.
-	 * @param	Data	Any Data to log.
-	 * @param	Style 	The <code>LogStyle</code> to use, for example <code>Log.STYLE_WARNING</code>. You can also create your own by importing the <code>LogStyle</code> class.
-	 */
+	 * @param  Data  Any Data to log.
+	 * @param  Style   The <code>LogStyle</code> to use, for example <code>Log.STYLE_WARNING</code>. You can also create your own by importing the <code>LogStyle</code> class.
+	 */ 
 	static public function advancedLog(Data:Dynamic, Style:LogStyle):Void
 	{
 		#if !FLX_NO_DEBUG
 		if ((_game != null) && (_game.debugger != null))
 		{
 			if (!Std.is(Data, Array))
-				Data = [Data];
-				
+				Data = [Data]; 
+			
 			_game.debugger.log.add(Data, Style);
 			
 			if (Style.errorSound != null)
@@ -1252,11 +1251,11 @@ class FlxG
 				}
 			}
 		}
-		_cache = new Map<String, BitmapData>();
+		_cache = new Map();
 	}
 	
 	/**
-	 * Clears nme.Assests.cachedBitmapData. Use it only when you need it and know what are you doing.
+	 * Clears flash.Assests.cachedBitmapData. Use it only when you need it and know what are you doing.
 	 */
 	static public function clearAssetsCache():Void
 	{
@@ -1298,7 +1297,7 @@ class FlxG
 	 */
 	static public function switchState(State:FlxState):Void
 	{
-		_game.requestNewState(State);
+		_game.requestNewState(State); 
 	}
 
 	#if !FLX_NO_DEBUG
@@ -1399,15 +1398,8 @@ class FlxG
 	 * @param	OnComplete	A function you want to run when the flash finishes.
 	 * @param	Force		Force the effect to reset.
 	 */
-	static public function flash(?Color:Int = 0xffffffff, Duration:Float = 1, OnComplete:Void->Void = null, Force:Bool = false):Void
+	static public function flash(Color:Int = 0xffffffff, Duration:Float = 1, OnComplete:Void->Void = null, Force:Bool = false):Void
 	{
-		#if !flash
-		if (Color == null)
-		{
-			Color = WHITE;
-		}
-		#end
-		
 		var i:Int = 0;
 		var l:Int = FlxG.cameras.length;
 		while (i < l)
@@ -1424,15 +1416,8 @@ class FlxG
 	 * @param	OnComplete	A function you want to run when the fade finishes.
 	 * @param	Force		Force the effect to reset.
 	 */
-	static public function fade(?Color:Int = 0xff000000, Duration:Float = 1, FadeIn:Bool = false, OnComplete:Void->Void = null, Force:Bool = false):Void
+	static public function fade(Color:Int = 0xff000000, Duration:Float = 1, FadeIn:Bool = false, OnComplete:Void->Void = null, Force:Bool = false):Void
 	{
-		#if !flash
-		if (Color == null)
-		{
-			Color = FlxG.BLACK;
-		}
-		#end
-		
 		var i:Int = 0;
 		var l:Int = FlxG.cameras.length;
 		while (i < l)
@@ -1661,11 +1646,7 @@ class FlxG
 		
 		addPlugin(new TimerManager());
 		
-		#if js
-		FlxG.mobile = true;
-		#else
 		FlxG.mobile = false;
-		#end
 		
 		#if !FLX_NO_DEBUG
 		log = Reflect.makeVarArgs(_log);
@@ -1681,11 +1662,10 @@ class FlxG
 	 */
 	static public function reset():Void
 	{
-		#if !flash
 		PxBitmapFont.clearStorage();
 		Atlas.clearAtlasCache();
 		TileSheetData.clear();
-		#end
+		
 		FlxG.clearBitmapCache();
 		FlxG.resetInput();
 		FlxG.destroySounds(true);
@@ -1859,7 +1839,7 @@ class FlxG
 		}
 	}
 	
-	#if !FLX_NO_DEBUG
+#if !FLX_NO_DEBUG
 	inline static public function drawDebugPlugins():Void
 	{
 		var plugin:FlxBasic;
@@ -1875,7 +1855,7 @@ class FlxG
 			}
 		}
 	}
-	#end
+#end
 	
 	/**
 	 * Tweens numeric public properties of an Object. Shorthand for creating a MultiVarTween tween, starting it and adding it to a Tweener.

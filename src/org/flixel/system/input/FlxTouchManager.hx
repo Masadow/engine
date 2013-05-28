@@ -1,12 +1,12 @@
 package org.flixel.system.input;
 
-import nme.ui.MultitouchInputMode;
-import nme.ui.Multitouch;
+import flash.ui.MultitouchInputMode;
+import flash.ui.Multitouch;
 import org.flixel.FlxG;
-import nme.Lib;
-import nme.geom.Point;
+import flash.Lib;
+import flash.geom.Point;
 import org.flixel.FlxGame;
-import nme.events.TouchEvent;
+import flash.events.TouchEvent;
 
 /**
  * ...

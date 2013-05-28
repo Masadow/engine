@@ -1,5 +1,9 @@
 flixel CHANGELOG
 
+v.2.0.0-alpha
+------------------------------
+* 
+
 v1.09
 ------------------------------
 * Fix for FlxSprite.fill() on cpp targets

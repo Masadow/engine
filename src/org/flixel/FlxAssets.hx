@@ -1,9 +1,9 @@
 package org.flixel;
 
 import nme.Assets;
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.text.Font;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.text.Font;
 
 /**
  * ...
@@ -116,7 +116,7 @@ class FlxAssets
 	public static function cacheSounds():Void
 	{
 		#if android
-		Reflect.callMethod(Assets, "initialize", []);
+		Reflect.callMethod(flash.installer.Assets, "initialize", []);
 		
 		var resourceClasses:Map<String, Dynamic> = cast Reflect.getProperty(Assets, "resourceClasses");
 		var resourceTypes:Map<String, String> = cast Reflect.getProperty(Assets, "resourceTypes");

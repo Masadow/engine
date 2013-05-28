@@ -1,6 +1,6 @@
 package org.flixel.plugin.pxText;
 
-import nme.display.BitmapData;
+import flash.display.BitmapData;
 import org.flixel.FlxG;
 import org.flixel.plugin.pxText.PxBitmapFont;
 

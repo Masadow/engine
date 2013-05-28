@@ -1,20 +1,20 @@
 package org.flixel.system;
 
 import nme.Assets;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Sprite;
-import nme.events.Event;
-import nme.events.MouseEvent;
-import nme.geom.Point;
-import nme.geom.Rectangle;
-import nme.text.TextField;
-import nme.text.TextFormat;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Sprite;
+import flash.events.Event;
+import flash.events.MouseEvent;
+import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import org.flixel.FlxColorUtils;
 import org.flixel.FlxG;
 
 import org.flixel.FlxAssets;
 import org.flixel.FlxU;
-import org.flixel.FlxColorUtils;
 
 /**
  * A generic, Flash-based window class, created for use in <code>FlxDebugger</code>.
@@ -102,20 +102,9 @@ class FlxWindow extends Sprite
 	 * @param BGColor		What color the window background should be, default is gray and transparent.
 	 * @param TopColor		What color the window header bar should be, default is black and transparent.
 	 */
-	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:Int = 0x7f7f7f7f, ?TopColor:Int = 0x7f000000)
+	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, BGColor:Int = 0x7f7f7f7f, TopColor:Int = 0x7f000000)
 	{
 		super();
-		
-		#if !flash
-		if (BGColor == null)
-		{
-			BGColor = FlxWindow.BG_COLOR;
-		}
-		if (TopColor == null)
-		{
-			TopColor = FlxWindow.TOP_COLOR;
-		}
-		#end
 		
 		_width = Std.int(Math.abs(Width));
 		_height = Std.int(Math.abs(Height));

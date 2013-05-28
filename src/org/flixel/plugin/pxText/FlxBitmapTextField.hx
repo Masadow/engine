@@ -1,7 +1,6 @@
 package org.flixel.plugin.pxText;
 
-import nme.display.BitmapData;
-import nme.display.BitmapInt32;
+import flash.display.BitmapData;
 import org.flixel.FlxCamera;
 import org.flixel.FlxG;
 import org.flixel.FlxSprite;
@@ -160,14 +159,16 @@ class FlxBitmapTextField extends FlxSprite
 		return value;
 	}
 	
-	#if !flash
-	override private function set_color(Color:BitmapInt32):BitmapInt32
+	#if flash
+	override public function draw():Void 
 	{
-		super.set_color(Color);
-		_pendingTextChange = true;
-		return _color;
+		if (_pendingTextChange)
+		{
+			updateBitmapData();
+		}
+		super.draw();
 	}
-	
+	#else
 	override public function draw():Void 
 	{
 		if (_atlas == null)
@@ -182,6 +183,11 @@ class FlxBitmapTextField extends FlxSprite
 			{
 				return;
 			}
+		}
+		
+		if (_pendingTextChange)
+		{
+			updateBitmapData();
 		}
 		
 		if (cameras == null)
@@ -353,6 +359,13 @@ class FlxBitmapTextField extends FlxSprite
 			
 			FlxBasic._VISIBLECOUNT++;
 		}
+	}
+	
+	override private function set_color(Color:Int):Int
+	{
+		super.set_color(Color);
+		_pendingTextChange = true;
+		return _color;
 	}
 	#end
 	
@@ -668,9 +681,7 @@ class FlxBitmapTextField extends FlxSprite
 			var red:Float = (_backgroundColor >> 16) * colorMultiplier;
 			var green:Float = (_backgroundColor >> 8 & 0xff) * colorMultiplier;
 			var blue:Float = (_backgroundColor & 0xff) * colorMultiplier;
-			#end
 			
-			#if (cpp || js)
 			red *= (_color >> 16);
 			green *= (_color >> 8 & 0xff);
 			blue *= (_color & 0xff);

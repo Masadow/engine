@@ -1,12 +1,12 @@
 package org.flixel;
 
 import nme.Assets;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
-import nme.display.Graphics;
-import nme.geom.Matrix;
-import nme.geom.Point;
-import nme.geom.Rectangle;
+import flash.display.Bitmap;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.geom.Matrix;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 import org.flixel.system.layer.DrawStackItem;
 
 import org.flixel.system.FlxTile;
@@ -639,11 +639,17 @@ class FlxTilemap extends FlxObject
 					if (tile != null)
 					{
 						if (tile.allowCollisions <= FlxObject.NONE)
-							debugColor = FlxG.BLUE;
+						{
+							debugColor = FlxColorUtils.BLUE;
+						}
 						else if (tile.allowCollisions != FlxObject.ANY)
-							debugColor = FlxG.PINK;
+						{
+							debugColor = FlxColorUtils.PINK;
+						}
 						else
-							debugColor = FlxG.GREEN;
+						{
+							debugColor = FlxColorUtils.GREEN;
+						}
 						
 						// Copied from makeDebugTile
 						var gfx:Graphics = Camera._effectsLayer.graphics;
@@ -1857,11 +1863,7 @@ class FlxTilemap extends FlxObject
 	 * @param  ColorMap  An array of color values (uint 0xAARRGGBB) in the order they're intended to be assigned as indices
 	 * @return	A comma-separated string containing the level data in a <code>FlxTilemap</code>-friendly format.
 	 */
-	#if flash
-	static public function bitmapToCSV(bitmapData:BitmapData, Invert:Bool = false, Scale:Int = 1, ColorMap:Array<UInt> = null):String
-	#else
 	static public function bitmapToCSV(bitmapData:BitmapData, Invert:Bool = false, Scale:Int = 1, ColorMap:Array<Int> = null):String
-	#end
 	{
 		if (Scale < 1) Scale = 1;
 		
@@ -1898,11 +1900,7 @@ class FlxTilemap extends FlxObject
 		//Walk image and export pixel values
 		var row:Int = 0;
 		var column:Int;
-		#if flash
-		var pixel:UInt;
-		#else
 		var pixel:Int;
-		#end
 		var csv:String = "";
 		var bitmapWidth:Int = bitmapData.width;
 		var bitmapHeight:Int = bitmapData.height;
@@ -2106,15 +2104,15 @@ class FlxTilemap extends FlxObject
 		
 		return tileSprite;
 	}
-
-    /**
+	
+	/**
 	 * Use this method so the tilemap buffers are updated, eg when resizing your game
-	 */
+	*/
     public function updateBuffers():Void
     {
         var i:Int = 0;
         var l:Int;
-
+		
         if (_buffers != null)
         {
             i = 0;

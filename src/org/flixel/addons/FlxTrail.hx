@@ -35,10 +35,6 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 	 */
 	public var rotationsEnabled:Bool = true;
 	/**
-	 * Determines whether trailsprites are solid or not. False by default.
-	 */
-	public var solid(default, set_solid):Bool = false;
-	/**
 	 *  Counts the frames passed.
 	 */
 	private var counter:Int = 0;
@@ -66,12 +62,12 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 	 *  Stores the sprites recent angles.
 	 */
 	private var recentAngles:Array<Float>;
-
+	
 	/**
 	 * Creates a new <code>FlxTrail</code> effect for a specific FlxSprite.
 	 * 
 	 * @param	Sprite		The FlxSprite the trail is attached to.
-	 * @param	Image		The image to ues for the trailsprites. Optional, uses the sprite's graphic if null.
+	 * @param  Image    The image to ues for the trailsprites. Optional, uses the sprite's graphic if null.
 	 * @param	Length		The amount of trailsprites to create. 
 	 * @param	Delay		How often to update the trail. 0 updates every frame.
 	 * @param	Alpha		The alpha value for the very first trailsprite.
@@ -93,7 +89,8 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 
 		// Create the initial trailsprites
 		increaseLength(Length);
-	}
+		solid = false;
+	}		
 
 	/**
 	 * Updates positions and other values according to the delay that has been set.
@@ -145,7 +142,10 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 		recentPositions.splice(0, recentPositions.length);
 		recentAngles.splice(0, recentAngles.length);
 		for (i in 0...members.length) 
-			members[i].exists = false;
+		{
+			if (members[i] != null)
+				members[i].exists = false;
+		}
 	}
 
 	/**
@@ -164,18 +164,19 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 		for (i in 0...amount)
 		{
 			var trailSprite:FlxSprite = new FlxSprite(0, 0);
+			trailSprite.exists = false;
 			
+			// TODO: improve this (if sprite have multiple frames)
 			if (image == null) trailSprite.pixels = sprite.pixels;
 			else trailSprite.loadGraphic(image);
 			
-			trailSprite.exists = false;
 			add(trailSprite);
 			trailSprite.alpha = transp;
 			transp -= difference;
 			trailSprite.solid = solid;
 
 			if (trailSprite.alpha <= 0) trailSprite.kill();
-		}
+		}	
 	}
 
 	/**
@@ -206,6 +207,8 @@ class FlxTrail extends FlxTypedGroup<FlxSprite>
 		xEnabled = X;
 		yEnabled = Y;
 	}
+	
+	public var solid(default, set_solid):Bool;
 	
 	private function set_solid(value:Bool):Bool
 	{

@@ -2,12 +2,12 @@ package org.flixel;
 import org.flixel.FlxPoint;
 
 import nme.Assets;
-import nme.display.BitmapData;
-import nme.filters.BitmapFilter;
-import nme.geom.Point;
-import nme.text.TextField;
-import nme.text.TextFormat;
-import nme.text.TextFormatAlign;
+import flash.display.BitmapData;
+import flash.filters.BitmapFilter;
+import flash.geom.Point;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import flash.text.TextFormatAlign;
 import org.flixel.system.layer.Atlas;
 
 /**
@@ -19,11 +19,7 @@ import org.flixel.system.layer.Atlas;
  */
 class FlxText extends FlxSprite
 {
-	#if flash
-	public var shadow(get_shadow, set_shadow):UInt;
-	#else
 	public var shadow(get_shadow, set_shadow):Int;
-	#end
 	
 	/**
 	 * Whether to draw shadow or not
@@ -50,11 +46,7 @@ class FlxText extends FlxSprite
 	/**
 	 * Internal tracker for the text shadow color, default is clear/transparent.
 	 */
-	#if flash
-	private var _shadow:UInt;
-	#else
 	private var _shadow:Int;
-	#end
 	/**
 	 * Internal tracker for shadow usage, default is false
 	 */
@@ -150,11 +142,7 @@ class FlxText extends FlxSprite
 	 * @param	ShadowColor	A uint representing the desired text shadow color in flash 0xRRGGBB format.
 	 * @return	This FlxText instance (nice for chaining stuff together, if you're into that).
 	 */
-	#if flash
-	public function setFormat(Font:String = null, Size:Float = 8, Color:UInt = 0xffffff, Alignment:String = null, ShadowColor:UInt = 0, UseShadow:Bool = false):FlxText
-	#else
 	public function setFormat(Font:String = null, Size:Float = 8, Color:Int = 0xffffff, Alignment:String = null, ShadowColor:Int = 0, UseShadow:Bool = false):FlxText
-	#end
 	{
 		if (_isStatic)
 		{
@@ -167,6 +155,7 @@ class FlxText extends FlxSprite
 		}
 		_format.font = Assets.getFont(Font).fontName;
 		_format.size = Size;
+		Color &= 0x00ffffff;
 		_format.color = Color;
 		_format.align = convertTextAlignmentFromString(Alignment);
 		_textField.defaultTextFormat = _format;
@@ -251,8 +240,8 @@ class FlxText extends FlxSprite
 			return Color;
 		}
 		
+		Color &= 0x00ffffff;
 		_format.color = Color;
-		
 		_textField.defaultTextFormat = _format;
 		updateFormat(_format);
 		_regen = true;
@@ -310,17 +299,14 @@ class FlxText extends FlxSprite
 		_textField.defaultTextFormat = _format;
 		updateFormat(_format);
 		dirty = true;
+		_regen = true;
 		return Alignment;
 	}
 	
 	/**
 	 * The color of the text shadow in 0xAARRGGBB hex format.
 	 */
-	#if flash
-	private function get_shadow():UInt
-	#else
 	private function get_shadow():Int
-	#end
 	{
 		return _shadow;
 	}
@@ -328,11 +314,7 @@ class FlxText extends FlxSprite
 	/**
 	 * @private
 	 */
-	#if flash
-	private function set_shadow(Color:UInt):UInt
-	#else
 	private function set_shadow(Color:Int):Int
-	#end
 	{
 		if (_isStatic)
 		{
@@ -471,8 +453,6 @@ class FlxText extends FlxSprite
 			
 		#if !flash
 			origin.make(frameWidth * 0.5, frameHeight * 0.5);
-			_halfWidth = origin.x;
-			_halfHeight = origin.y;
 		}
 		#end
 		
@@ -515,7 +495,7 @@ class FlxText extends FlxSprite
 	 * Horizontally - set alignment to "center" and increase the sprite width.
 	 * Vertically   - add newlines ('\n') to the beggining and end of the text.
 	 */
-	override public function setClipping(width:Int, height:Int)
+	override public function setClipping(width:Int, height:Int) 
 	{}
 
 	
@@ -581,9 +561,9 @@ class FlxText extends FlxSprite
 		var cachedBmd:BitmapData = FlxG._cache.get(_bitmapDataKey);
 		if (cachedBmd != _pixels)
 		{
-			cachedBmd.dispose();
 			FlxG._cache.set(_bitmapDataKey, _pixels);
 			_atlas.clearAndFillWith(_pixels);
+			cachedBmd.dispose();
 		}
 		_node = _atlas.getNodeByKey(_bitmapDataKey);
 		updateFrameData();

@@ -4,8 +4,8 @@
  */
 package org.flixel;
 
-import nme.Lib;
-import nme.net.URLRequest;
+import flash.Lib;
+import flash.net.URLRequest;
 import org.flixel.FlxPoint;
 import org.flixel.FlxColorUtils;
 
@@ -190,7 +190,7 @@ class FlxU
 	/**
 	 * Just grabs the current "ticks" or time in milliseconds that has passed since Flash Player started up.
 	 * Useful for finding out how long it takes to execute specific blocks of code.
-	 * @return	A <code>int</code> to be passed to <code>FlxU.endProfile()</code>.
+	 * @return	A <code>uint</code> to be passed to <code>FlxU.endProfile()</code>.
 	 */
 	inline static public function getTicks():Int
 	{
@@ -209,9 +209,10 @@ class FlxU
 		return (Math.abs(EndTicks - StartTicks) / 1000) + "s";
 	}
 	
+	// TODO: Eventually remove all the color-related functions from FlxU 
+	
 	/**
 	 * Reference to FlxColorUtils.makeFromRGBA for backwards compatibility.
-	 * @return  The color as a <code>int</code>.
 	 */
 	inline static public function makeColor(Red:Int, Green:Int, Blue:Int, Alpha:Float = 1.0):Int
 	{
@@ -219,7 +220,7 @@ class FlxU
 	}
 	
 	/**
-	 * Reference to FlxColorUtils.makeFromHSBA for backwards compatibility.
+	 *Reference to FlxColorUtils.makeFromHSBA for backwards compatibility. 
 	 */
 	inline static public function makeColorFromHSB(Hue:Float, Saturation:Float, Brightness:Float, Alpha:Float = 1.0):Int
 	{
@@ -227,7 +228,7 @@ class FlxU
 	}
 	
 	/**
-	 * Reference to FlxColorUtils.getRGBA for backwards compatibility.
+	 * Reference to FlxColorUtils.getRGBA for backwards compatibility. 
 	 */
 	inline static public function getRGBA(Color:Int, Results:RGBA = null):RGBA
 	{
@@ -235,7 +236,7 @@ class FlxU
 	}
 	
 	/**
-	 * Reference to FlxColorUtils.getHSBA for backwards compatibility.
+	 * Reference to FlxColorUtils.getHSBA for backwards compatibility. 
 	 */
 	inline static public function getHSB(Color:Int, Results:HSBA = null):HSBA
 	{
@@ -295,9 +296,9 @@ class FlxU
 	
 	/**
 	 * Generate a string representation of a FlxPoint.
-	 * @param	Point		A <code>FlxPoint</code> object.
-	 * @param	Precison	To how many decimals x and y should be rounded.
-	 * @return	A <code>String</code> formatted like this: <code>x: Point.x | y: Point.y</code>
+	 * @param  Point    A <code>FlxPoint</code> object.
+	 * @param  Precison  To how many decimals x and y should be rounded.
+	 * @return  A <code>String</code> formatted like this: <code>x: Point.x | y: Point.y</code>
 	 */
 	inline static public function formatFlxPoint(Point:FlxPoint, Precision:Int):String
 	{
@@ -306,19 +307,19 @@ class FlxU
 		{
 			var xValue:Float = roundDecimal(Point.x, Precision);
 			var yValue:Float = roundDecimal(Point.y, Precision);
-			
+
 			string = "x: " + xValue + " | y: " + yValue;
 		}
 		
 		return string;
 	}
-	
-	/**
+
+	 /**
 	 * Generate a comma-seperated string representation of the keys in a Hash.
-	 * @param	AnyHash		A <code>Hash</code> object.
-	 * @return	A <code>String</code> formatted like this: <code>key1, key2, ..., keyX</code>
+	 * @param  AnyHash    A <code>Hash</code> object.
+	 * @return  A <code>String</code> formatted like this: <code>key1, key2, ..., keyX</code>
 	 */
-	inline static public function formatHash(AnyHash:Hash<Dynamic>):String
+	inline static public function formatHash(AnyHash:Map<String, Dynamic>):String
 	{
 		var string:String = "";
 		for (key in AnyHash.keys()) {
@@ -327,7 +328,7 @@ class FlxU
 		}
 		string = string.substring(0, string.length - 2);
 		return string;
-	}
+	} 
 	
 	/**
 	 * Automatically commas and decimals in the right places for displaying money amounts.
@@ -630,6 +631,9 @@ class FlxU
 	
 	inline static public function ArrayIndexOf(array:Array<Dynamic>, whatToFind:Dynamic, fromIndex:Int = 0):Int
 	{
+		#if flash
+		return untyped array.indexOf(whatToFind, fromIndex);
+		#else
 		var len:Int = array.length;
 		var index:Int = -1;
 		for (i in fromIndex...len)
@@ -641,21 +645,18 @@ class FlxU
 			}
 		}
 		return index;
+		#end
 	}
 	
 	static public function SetArrayLength(array:Array<Dynamic>, newLength:Int):Void
 	{
+		#if flash
+		untyped array.length = newLength;
+		#else
 		if (newLength < 0) return;
 		var oldLength:Int = array.length;
 		var diff:Int = newLength - oldLength;
-		if (diff > 0)
-		{
-			/*for (i in 0...diff)
-			{
-				array.push(null);
-			}*/
-		}
-		else if (diff < 0)
+		if (diff < 0)
 		{
 			diff = -diff;
 			for (i in 0...diff)
@@ -663,7 +664,7 @@ class FlxU
 				array.pop();
 			}
 		}
-		
+		#end
 	}
 	
 	#if (flash || js)

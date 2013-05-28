@@ -1,8 +1,8 @@
 package org.flixel;
 
-import nme.display.Graphics;
-import nme.display.Sprite;
-import nme.geom.Point;
+import flash.display.Graphics;
+import flash.display.Sprite;
+import flash.geom.Point;
 
 import org.flixel.FlxBasic;
 
@@ -164,7 +164,7 @@ class FlxObject extends FlxBasic
 	/**
 	 * Should always represent (0,0) - useful for different things, for avoiding unnecessary <code>new</code> calls.
 	 */
-	static private inline function _pZero() { return new FlxPoint(); }
+	static private var _pZero:FlxPoint = new FlxPoint();
 	
 	/**
 	 * A point that can store numbers from 0 to 1 (for X and Y independently)
@@ -286,7 +286,7 @@ class FlxObject extends FlxBasic
 		
 		x = X;
 		y = Y;
-		last = new FlxPoint(x,y);
+		last = new FlxPoint(x, y);
 		width = Width;
 		height = Height;
 		mass = 1.0;
@@ -463,20 +463,20 @@ class FlxObject extends FlxBasic
 		{
 			if (allowCollisions != ANY)
 			{
-				debugBoundingBoxColor = FlxG.PINK;
+				debugBoundingBoxColor = FlxColorUtils.PINK;
 			}
 			if (immovable)
 			{
-				debugBoundingBoxColor = FlxG.GREEN;
+				debugBoundingBoxColor = FlxColorUtils.GREEN;
 			}
 			else
 			{
-				debugBoundingBoxColor = FlxG.RED;
+				debugBoundingBoxColor = FlxColorUtils.RED;
 			}
 		}
 		else if (!_boundingBoxColorOverritten)
 		{
-			debugBoundingBoxColor = FlxG.BLUE;
+			debugBoundingBoxColor = FlxColorUtils.BLUE;
 		}
 		
 		//fill static graphics object with square shape
@@ -732,7 +732,7 @@ class FlxObject extends FlxBasic
 				angularAcceleration = 0;
 				angle = pathAngle;
 			}
-		}
+		}			
 	}
 	
 	/**
@@ -1280,7 +1280,7 @@ class FlxObject extends FlxBasic
 			return false;
 		}
 	}
-
+	
 	public function move(x:Float, y:Float):Void
 	{
 		this.x = x;

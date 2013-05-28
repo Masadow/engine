@@ -5,41 +5,40 @@ import flash.events.KeyboardEvent;
 import flash.text.TextFieldType;
 import flash.ui.Keyboard;
 import nme.Assets;
-import nme.display.BitmapInt32;
-import nme.errors.ArgumentError;
-import nme.events.Event;
-import nme.geom.Rectangle;
-import nme.text.TextField;
-import nme.text.TextFormat;
+import flash.errors.ArgumentError;
+import flash.events.Event;
+import flash.geom.Rectangle;
+import flash.text.TextField;
+import flash.text.TextFormat;
 import org.flixel.FlxAssets;
 import org.flixel.FlxG;
 import org.flixel.system.FlxWindow;
 import org.flixel.FlxObject;
 
-#if haxe3
-private typedef Hash<T> = Map<String,T>;
-#end
-
 /**
- * 
+ * A powerful console for the flixel debugger screen with supports
+ * custom commands, registering objects and functions and saves the 
+ * last 25 commands used.
+ * Inspired by Eric Smith's "CoolConsole".
+ * @link http://www.youtube.com/watch?v=QWfpw7elWk8
  */
 class Console extends FlxWindow
 {
 	private var _input:TextField;
 	
-	private var cmdFunctions:Hash<Dynamic>;
-	private var cmdObjects:Hash<Dynamic>;
+	private var cmdFunctions:Map<String, Dynamic>;
+	private var cmdObjects:Map<String, Dynamic>;
 	
 	/**
 	 * Hash containing all registered Obejects for the set command. You can use the registerObject() 
 	 * helper function to register new ones or add them to this Hash directly.
 	 */
-	public var registeredObjects:Hash<Dynamic>;
+	public var registeredObjects:Map<String, Dynamic>;
 	/**
 	 * Hash containing all registered Functions for the call command. You can use the registerFunction() 
 	 * helper function to register new ones or add them to this Hash directly.
 	 */
-	public var registeredFunctions:Hash<Dynamic>;
+	public var registeredFunctions:Map<String, Dynamic>;
 	
 	/**
 	 * Internal helper var containing all the FlxObjects created via the create command.
@@ -72,19 +71,15 @@ class Console extends FlxWindow
 	 * @param BGColor		What color the window background should be, default is gray and transparent.
 	 * @param TopColor		What color the window header bar should be, default is black and transparent.
 	 */	
-	#if flash
-	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:UInt = 0xAA000000, ?TopColor:UInt = 0x7f000000)
-	#else
-	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:BitmapInt32 = 0xAA000000, ?TopColor:BitmapInt32)
-	#end
+	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, BGColor:Int = 0xAA000000, TopColor:Int = 0x7f000000)
 	{	
 		super(Title, Width, Height, Resizable, Bounds, BGColor, TopColor);
 		
-		cmdFunctions = new Hash<Dynamic>();
-		cmdObjects = new Hash<Dynamic>();
+		cmdFunctions = new Map<String, Dynamic>();
+		cmdObjects = new Map<String, Dynamic>();
 		
-		registeredObjects = new Hash<Dynamic>();
-		registeredFunctions = new Hash<Dynamic>();
+		registeredObjects = new Map<String, Dynamic>();
+		registeredFunctions = new Map<String, Dynamic>();
 		
 		objectStack = new Array<FlxObject>();
 		
@@ -116,13 +111,16 @@ class Console extends FlxWindow
 		_input.addEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
 		
 		// Install commands
+		#if !FLX_NO_DEBUG
 		var commands:ConsoleCommands = new ConsoleCommands(this);
+		#end
 	}
 	
 	private function onFocus(e:FocusEvent):Void
 	{
+		#if !FLX_NO_DEBUG
 		// Pause game
-		#if flash
+		#if flash 
 		if (autoPause)
 			FlxG._game.debugger.vcr.onPause();
 		#end
@@ -131,10 +129,12 @@ class Console extends FlxWindow
 		
 		if (_input.text == defaultText) 
 			_input.text = "";
+		#end
 	}
 	
 	private function onFocusLost(e:FocusEvent):Void
 	{
+		#if !FLX_NO_DEBUG
 		// Unpause game
 		#if flash
 		if (autoPause)
@@ -144,6 +144,7 @@ class Console extends FlxWindow
 		
 		if (_input.text == "") 
 			_input.text = defaultText;
+		#end
 	}
 	
 	private function onKeyPress(e:KeyboardEvent):Void
@@ -212,10 +213,14 @@ class Console extends FlxWindow
 				// Push all the strings into one param for the log command
 				if  (command == "log") 
 					args = [args.join(" ")];
-				// Make the second param of call an array of the ramining params to 
+				// Make the second param of call an array of the remaining params to 
 				// be passed to the function you call
 				else if (command == "call") 
 					args[1] = args.slice(1, args.length);
+				// Make the third param of create an array of the remaining params to 
+				// be passed to the constructor of the FlxObject to create
+				else if (command == "create" || command == "cr") 
+					args[2] = args.slice(2, args.length);
 					
 				callFunction(obj, func, args); 
 			}
@@ -224,15 +229,16 @@ class Console extends FlxWindow
 		}
 		// In case the command doesn't exist
 		else {
-			FlxG.log("> Invalid command: '" + command + "'");
+			FlxG.error("Console: Invalid command: '" + command + "'");
 		}
 	}
 	
-	public function callFunction(obj:Dynamic, func:Dynamic, args:Array<Dynamic>):Void
+	public function callFunction(obj:Dynamic, func:Dynamic, args:Array<Dynamic>):Bool
 	{
 		try 
 		{
 			Reflect.callMethod(obj, func, args);
+			return true;
 		}
 		catch(e:ArgumentError)
 		{
@@ -254,10 +260,14 @@ class Console extends FlxWindow
 				// ...but not with too few
 				else 
 				{
-					FlxG.log("> Invalid number or paramters: " + expected + " expected, " + args.length + " passed");
-					return;
+					FlxG.error("Console: Invalid number or parameters: " + expected + " expected, " + args.length + " passed");
+					return false;
 				}
+				
+				return true;
 			}
+			
+			return false;
 		}
 	}
 	
@@ -328,11 +338,10 @@ class Console extends FlxWindow
 	 * Register a new function to use for the call command.
 	 * @param FunctionAlias	The name with which you want to access the function.
 	 * @param Function		The function to register.
-	 * @param AnyObject		The object that contains the function.
 	 */
-	public function registerFunction(FunctionAlias:String, Function:Dynamic, AnyObject:Dynamic):Void
+	public function registerFunction(FunctionAlias:String, Function:Dynamic):Void
 	{
-		registeredFunctions.set(FunctionAlias, [Function, AnyObject]);
+		registeredFunctions.set(FunctionAlias, Function);
 	}
 	
 	/**
