@@ -17,7 +17,6 @@ import org.flixel.plugin.pxText.PxBitmapFont;
 import org.flixel.system.layer.Atlas;
 import org.flixel.system.layer.TileSheetData;
 import org.flixel.system.input.FlxInputs;
-import org.flixel.system.layer.TileSheetExt;
 
 #if flash
 import flash.text.AntiAliasType;
@@ -382,8 +381,8 @@ class FlxGame extends Sprite
 		#if(cpp && thread)
 		_stateSwitchRequested = true;
 		#end
-	} 
-
+	}
+	
 	/**
 	 * If there is a state change requested during the update loop,
 	 * this function handles actual destroying the old state and related processes,
@@ -392,10 +391,11 @@ class FlxGame extends Sprite
 	private function switchState():Void
 	{ 
 		//Basic reset stuff
+		#if !flash
 		PxBitmapFont.clearStorage();
 		Atlas.clearAtlasCache();
 		TileSheetData.clear();
-		
+		#end
 		FlxG.clearBitmapCache();
 		FlxG.resetCameras();
 		FlxG.resetInput();
@@ -426,8 +426,8 @@ class FlxGame extends Sprite
 		_state = _requestedState;
 		_state.create();
 		
-		#if (cpp && thread) 
-		_stateSwitchRequested = false; 
+		#if(cpp && thread)
+		_stateSwitchRequested = false;
 		#end
 	}
 	
@@ -520,8 +520,8 @@ class FlxGame extends Sprite
 				
 				//Save sound preferences
 				_prefsSave.data.mute = FlxG.mute;
-				_prefsSave.data.volume = FlxG.volume; 
-				_prefsSave.flush(); 
+				_prefsSave.data.volume = FlxG.volume;
+				_prefsSave.flush();
 			}
 		}
 	}
@@ -634,7 +634,7 @@ class FlxGame extends Sprite
 		#end
 
 		#if !flash
-		TileSheetExt._DRAWCALLS = 0;
+		TileSheetData._DRAWCALLS = 0;
 		#end
 		
 		FlxG.lockCameras();
@@ -642,7 +642,7 @@ class FlxGame extends Sprite
 		#if (cpp && thread)
 		// Only draw the state if a new state hasn't been requested
 		if (!_stateSwitchRequested)
-		#end 
+		#end
 		_state.draw();
 		
 		#if !FLX_NO_DEBUG
@@ -658,7 +658,7 @@ class FlxGame extends Sprite
 		#if !FLX_NO_DEBUG
 		if (_debuggerUp)
 		{
-			_debugger.perf.drawCalls(TileSheetExt._DRAWCALLS);
+			_debugger.perf.drawCalls(TileSheetData._DRAWCALLS);
 		}
 		#end
 		#end
@@ -751,11 +751,7 @@ class FlxGame extends Sprite
 		_soundTray.visible = false;
 		_soundTray.scaleX = 2;
 		_soundTray.scaleY = 2;
-		#if !neko
 		var tmp:Bitmap = new Bitmap(new BitmapData(80, 30, true, 0x7F000000));
-		#else
-		var tmp:Bitmap = new Bitmap(new BitmapData(80, 30, true, {rgb: 0x000000, a: 0x7F}));
-		#end
 		_soundTray.x = (FlxG.width / 2) * FlxCamera.defaultZoom - (tmp.width / 2) * _soundTray.scaleX;
 		_soundTray.addChild(tmp);
 		
@@ -802,18 +798,18 @@ class FlxGame extends Sprite
 		if (_prefsSave.data.volume != null)
 			FlxG.volume = _prefsSave.data.sound.volume;
 		else 
-			FlxG.volume = 0.5; 
-		
+			FlxG.volume = 0.5;
+			
 		if (_prefsSave.data.mute != null)
 			FlxG.mute = _prefsSave.data.sound.mute;
 		else 
-			FlxG.mute = false; 
+			FlxG.mute = false;
 	}
 	
 	/**
 	 * Sets up the darkened overlay with the big white "play" button that appears when a flixel game loses focus.
 	 */
-	public function createFocusScreen():Void
+	private function createFocusScreen():Void
 	{
 		var gfx:Graphics = _focus.graphics;
 		var screenWidth:Int = Std.int(FlxG.width * FlxCamera.defaultZoom);

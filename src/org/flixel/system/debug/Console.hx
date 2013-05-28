@@ -18,14 +18,10 @@ import org.flixel.FlxObject;
 
 #if haxe3
 private typedef Hash<T> = Map<String,T>;
-#end 
+#end
 
 /**
- * A powerful console for the flixel debugger screen with supports
- * custom commands, registering objects and functions and saves the 
- * last 25 commands used.
- * Inspired by Eric Smith's "CoolConsole".
- * @link http://www.youtube.com/watch?v=QWfpw7elWk8
+ * 
  */
 class Console extends FlxWindow
 {
@@ -120,16 +116,13 @@ class Console extends FlxWindow
 		_input.addEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
 		
 		// Install commands
-		#if !FLX_NO_DEBUG
 		var commands:ConsoleCommands = new ConsoleCommands(this);
-		#end
 	}
 	
 	private function onFocus(e:FocusEvent):Void
 	{
-		#if !FLX_NO_DEBUG
 		// Pause game
-		#if flash 
+		#if flash
 		if (autoPause)
 			FlxG._game.debugger.vcr.onPause();
 		#end
@@ -138,12 +131,10 @@ class Console extends FlxWindow
 		
 		if (_input.text == defaultText) 
 			_input.text = "";
-		#end
 	}
 	
 	private function onFocusLost(e:FocusEvent):Void
 	{
-		#if !FLX_NO_DEBUG
 		// Unpause game
 		#if flash
 		if (autoPause)
@@ -153,7 +144,6 @@ class Console extends FlxWindow
 		
 		if (_input.text == "") 
 			_input.text = defaultText;
-		#end
 	}
 	
 	private function onKeyPress(e:KeyboardEvent):Void
@@ -222,14 +212,10 @@ class Console extends FlxWindow
 				// Push all the strings into one param for the log command
 				if  (command == "log") 
 					args = [args.join(" ")];
-				// Make the second param of call an array of the remaining params to 
+				// Make the second param of call an array of the ramining params to 
 				// be passed to the function you call
 				else if (command == "call") 
 					args[1] = args.slice(1, args.length);
-				// Make the third param of create an array of the remaining params to 
-				// be passed to the constructor of the FlxObject to create
-				else if (command == "create" || command == "cr") 
-					args[2] = args.slice(2, args.length);
 					
 				callFunction(obj, func, args); 
 			}
@@ -238,16 +224,15 @@ class Console extends FlxWindow
 		}
 		// In case the command doesn't exist
 		else {
-			FlxG.error("Console: Invalid command: '" + command + "'");
+			FlxG.log("> Invalid command: '" + command + "'");
 		}
 	}
 	
-	public function callFunction(obj:Dynamic, func:Dynamic, args:Array<Dynamic>):Bool
+	public function callFunction(obj:Dynamic, func:Dynamic, args:Array<Dynamic>):Void
 	{
 		try 
 		{
 			Reflect.callMethod(obj, func, args);
-			return true;
 		}
 		catch(e:ArgumentError)
 		{
@@ -269,14 +254,10 @@ class Console extends FlxWindow
 				// ...but not with too few
 				else 
 				{
-					FlxG.error("Console: Invalid number or parameters: " + expected + " expected, " + args.length + " passed");
-					return false;
+					FlxG.log("> Invalid number or paramters: " + expected + " expected, " + args.length + " passed");
+					return;
 				}
-				
-				return true;
 			}
-			
-			return false;
 		}
 	}
 	
@@ -347,10 +328,11 @@ class Console extends FlxWindow
 	 * Register a new function to use for the call command.
 	 * @param FunctionAlias	The name with which you want to access the function.
 	 * @param Function		The function to register.
+	 * @param AnyObject		The object that contains the function.
 	 */
-	public function registerFunction(FunctionAlias:String, Function:Dynamic):Void
+	public function registerFunction(FunctionAlias:String, Function:Dynamic, AnyObject:Dynamic):Void
 	{
-		registeredFunctions.set(FunctionAlias, Function);
+		registeredFunctions.set(FunctionAlias, [Function, AnyObject]);
 	}
 	
 	/**

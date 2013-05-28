@@ -1,7 +1,6 @@
 package org.flixel.system.debug;
 
 import nme.Assets;
-import nme.display.BitmapInt32;
 import nme.geom.Rectangle;
 import nme.text.TextField;
 import nme.text.TextFormat;
@@ -23,7 +22,6 @@ class Log extends FlxWindow
 	static public var STYLE_WARNING:LogStyle;
 	static public var STYLE_ERROR:LogStyle;
 	static public var STYLE_NOTICE:LogStyle;
-	static public var STYLE_CONSOLE:LogStyle;
 
 	private var _text:TextField;
 	private var _lines:Array<String>;
@@ -38,11 +36,7 @@ class Log extends FlxWindow
 	 * @param BGColor		What color the window background should be, default is gray and transparent.
 	 * @param TopColor		What color the window header bar should be, default is black and transparent.
 	 */	
-	#if flash
-	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:UInt = 0x7f7f7f7f, ?TopColor:UInt = 0x7f000000)
-	#else
-	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:BitmapInt32, ?TopColor:BitmapInt32)
-	#end
+	public function new(Title:String, Width:Float, Height:Float, Resizable:Bool = true, Bounds:Rectangle = null, ?BGColor:Int = 0x7f7f7f7f, ?TopColor:Int = 0x7f000000)
 	{
 		#if !flash
 		if (BGColor == null)
@@ -72,7 +66,6 @@ class Log extends FlxWindow
 		STYLE_WARNING = new LogStyle("[WARNING] ", "FFFF00", 12, true, false, false, "Beep");
 		STYLE_ERROR = new LogStyle("[ERROR] ", "FF0000", 12, true, false, false, "Beep", true);
 		STYLE_NOTICE = new LogStyle("[NOTICE] ", "008000", 12, true);
-		STYLE_CONSOLE = new LogStyle("&#62; ", "0000ff", 12, true);
 	}
 	
 	/**
@@ -90,7 +83,6 @@ class Log extends FlxWindow
 		STYLE_WARNING = null;
 		STYLE_ERROR = null;
 		STYLE_NOTICE = null;
-		STYLE_CONSOLE = null;
 		super.destroy();
 	}
 	
@@ -101,6 +93,7 @@ class Log extends FlxWindow
 	 */
 	public function add(Data:Array<Dynamic>, Style:LogStyle):Void
 	{
+		trace(Data);
 		if (Data == null) 
 			return;
 			
@@ -128,15 +121,15 @@ class Log extends FlxWindow
 		
 		if (Style.bold) {
 			prefix = "<b>" + prefix;
-			suffix = suffix + "</b>";
+			suffix = "</b>" + suffix;
 		}
 		if (Style.italic) {
 			prefix = "<i>" + prefix;
-			suffix = suffix + "</i>";
+			suffix = "</i>" + suffix;
 		}
 		if (Style.underlined) {
 			prefix = "<u>" + prefix;
-			suffix = suffix + "</u>";
+			suffix = "</u>" + suffix;
 		}
 		
 		text = prefix + Style.prefix + text + suffix;

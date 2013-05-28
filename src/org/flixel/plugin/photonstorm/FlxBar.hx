@@ -382,11 +382,11 @@ class FlxBar extends FlxSprite
 	}
 	#end
 	
-	public var stats(get_stats, null):Hash<Dynamic>;
+	public var stats(get_stats, null):Map<String, Dynamic>;
 	
-	private function get_stats():Hash<Dynamic>
+	private function get_stats():Map<String, Dynamic>
 	{
-		var data = new Hash<Dynamic>();
+		var data = new Map<String, Dynamic>();
 		data.set("min", min);
 		data.set("max", max);
 		data.set("range", range);
@@ -1019,7 +1019,7 @@ class FlxBar extends FlxSprite
 			else if (fillDirection == FILL_VERTICAL_OUTSIDE_IN)
 			{
 				filledBarRect.height = Std.int(100 - percent * pxPerPercent);
-				filledBarPoint.y = Std.int((barHeight - filledBarRect.height) / 2);
+				filledBarPoint.y = Std.int((barHeight- filledBarRect.height) / 2);
 			}
 			
 			canvas.copyPixels(filledBar, filledBarRect, filledBarPoint);
@@ -1132,10 +1132,6 @@ class FlxBar extends FlxSprite
 		while (i < l)
 		{
 			camera = cameras[i++];
-			if (!onScreenSprite(camera) || !camera.visible || !camera.exists)
-			{
-				continue;
-			}
 			#if !js
 			var isColoredCamera:Bool = camera.isColored();
 			var redMult:Float = _red;
@@ -1156,6 +1152,10 @@ class FlxBar extends FlxSprite
 			currDrawData = drawItem.drawData;
 			currIndex = drawItem.position;
 			
+			if (!onScreenSprite(camera) || !camera.visible || !camera.exists)
+			{
+				continue;
+			}
 			_point.x = x - (camera.scroll.x * scrollFactor.x) - (offset.x) + origin.x;
 			_point.y = y - (camera.scroll.y * scrollFactor.y) - (offset.y) + origin.y;
 			
@@ -1173,7 +1173,7 @@ class FlxBar extends FlxSprite
 			var x2:Float = 0;
 			var y2:Float = 0;
 
-			if (!simpleRenderSprite())
+			if (!simpleRenderSprite ())
 			{
 				var radians:Float = -angle * FlxG.RAD;
 				var cos:Float = Math.cos(radians);

@@ -187,7 +187,6 @@ class FlxSave
 				FlxG.warn("FlxSave is requesting extra storage space.");
 			case ERROR:
 				FlxG.error("There was a problem flushing\nthe shared object data from FlxSave.");
-			//default:
 		}
 		if (_onComplete != null)
 		{

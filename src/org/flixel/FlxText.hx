@@ -3,7 +3,6 @@ import org.flixel.FlxPoint;
 
 import nme.Assets;
 import nme.display.BitmapData;
-import nme.display.BitmapInt32;
 import nme.filters.BitmapFilter;
 import nme.geom.Point;
 import nme.text.TextField;
@@ -168,9 +167,6 @@ class FlxText extends FlxSprite
 		}
 		_format.font = Assets.getFont(Font).fontName;
 		_format.size = Size;
-		#if !neko
-		Color &= 0x00ffffff;
-		#end
 		_format.color = Color;
 		_format.align = convertTextAlignmentFromString(Alignment);
 		_textField.defaultTextFormat = _format;
@@ -240,42 +236,23 @@ class FlxText extends FlxSprite
 	/**
 	 * The color of the text being displayed.
 	 */
-	#if flash
-	override private function get_color():UInt
+	override private function get_color():Int
 	{
 		return _format.color;
 	}
-	#else
-	override private function get_color():BitmapInt32
-	{
-		#if !neko
-		return _format.color;
-		#else
-		return { rgb: _format.color, a: 0xff };
-		#end
-	}
-	#end
 	
 	/**
 	 * @private
 	 */
-	#if flash
-	override private function set_color(Color:UInt):UInt
-	#else
-	override private function set_color(Color:BitmapInt32):BitmapInt32
-	#end
+	override private function set_color(Color:Int):Int
 	{
 		if (_isStatic)
 		{
 			return Color;
 		}
 		
-		#if neko
-		_format.color = Color.rgb;
-		#else
-		Color &= 0x00ffffff;
 		_format.color = Color;
-		#end
+		
 		_textField.defaultTextFormat = _format;
 		updateFormat(_format);
 		_regen = true;
@@ -494,6 +471,8 @@ class FlxText extends FlxSprite
 			
 		#if !flash
 			origin.make(frameWidth * 0.5, frameHeight * 0.5);
+			_halfWidth = origin.x;
+			_halfHeight = origin.y;
 		}
 		#end
 		
@@ -536,7 +515,7 @@ class FlxText extends FlxSprite
 	 * Horizontally - set alignment to "center" and increase the sprite width.
 	 * Vertically   - add newlines ('\n') to the beggining and end of the text.
 	 */
-	override public function setClipping(width:Int, height:Int):Dynamic 
+	override public function setClipping(width:Int, height:Int)
 	{}
 
 	
@@ -602,9 +581,9 @@ class FlxText extends FlxSprite
 		var cachedBmd:BitmapData = FlxG._cache.get(_bitmapDataKey);
 		if (cachedBmd != _pixels)
 		{
+			cachedBmd.dispose();
 			FlxG._cache.set(_bitmapDataKey, _pixels);
 			_atlas.clearAndFillWith(_pixels);
-			cachedBmd.dispose();
 		}
 		_node = _atlas.getNodeByKey(_bitmapDataKey);
 		updateFrameData();

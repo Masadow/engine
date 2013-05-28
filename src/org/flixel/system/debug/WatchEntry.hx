@@ -7,10 +7,8 @@ import nme.text.TextField;
 import nme.text.TextFieldType;
 import nme.text.TextFormat;
 import org.flixel.FlxAssets;
-import org.flixel.FlxG;
+
 import org.flixel.FlxU;
-import org.flixel.FlxPoint;
-import org.flixel.system.FlxDebugger;
 
 /**
  * Helper class for the debugger overlay's Watch window.
@@ -25,7 +23,7 @@ class WatchEntry
 	/**
 	 * The member variable of that object.
 	 */
-	public var field:String;	
+	public var field:String;
 	/**
 	 * A custom display name for this object, if there is any.
 	 */
@@ -67,29 +65,6 @@ class WatchEntry
 		field = Field;
 		custom = Custom;
 		
-		var tempArr:Array<String> = field.split(".");
-		var l:Int = tempArr.length;
-		var tempObj:Dynamic = object;
-		var tempVarName:String = "";
-		for (i in 0...l)
-		{
-			tempVarName = tempArr[i];
-			if (!Reflect.hasField(tempObj, tempVarName)) 
-			{
-				FlxG.error("Watch: " + Std.string(tempObj) + " does not have a field '" + tempVarName + "'");
-				tempVarName = null;
-				break;
-			}
-			
-			if (i < (l - 1))
-			{
-				tempObj = Reflect.getProperty(tempObj, tempVarName);
-			}
-		}
-		
-		object = tempObj;
-		field = tempVarName;
-		
 		var fontName:String = Assets.getFont(FlxAssets.debuggerFont).fontName;
 		_whiteText = new TextFormat(fontName, 12, 0xffffff);
 		_blackText = new TextFormat(fontName, 12, 0);
@@ -102,7 +77,7 @@ class WatchEntry
 		
 		valueDisplay = new TextField();
 		valueDisplay.y = Y;
-		valueDisplay.height = 20;
+		valueDisplay.height = 16;
 		valueDisplay.multiline = false;
 		valueDisplay.selectable = true;
 		valueDisplay.doubleClickEnabled = true;
@@ -157,8 +132,9 @@ class WatchEntry
 		{
 			nameDisplay.text = "";
 			if (NameWidth > 120)
+			{
 				nameDisplay.appendText(FlxU.getClassName(object, (NameWidth < 240)) + ".");
-			
+			}
 			nameDisplay.appendText(field);
 		}
 	}
@@ -169,15 +145,10 @@ class WatchEntry
 	public function updateValue():Bool
 	{
 		if (editing)
+		{
 			return false;
-			
-		var property:Dynamic = Reflect.getProperty(object, field);
-		
-		if (Std.is(property, FlxPoint)) 
-			valueDisplay.text = FlxU.formatFlxPoint(property, FlxDebugger.pointPrecision);
-		else
-			valueDisplay.text = Std.string(property);
-		
+		}
+		valueDisplay.text = Std.string(Reflect.getProperty(object, field));
 		return true;
 	}
 	
@@ -192,6 +163,7 @@ class WatchEntry
 		valueDisplay.type = TextFieldType.INPUT;
 		valueDisplay.setTextFormat(_blackText);
 		valueDisplay.background = true;
+		
 	}
 	
 	/**
@@ -228,26 +200,7 @@ class WatchEntry
 	 */
 	public function submit():Void
 	{
-		var property:Dynamic = Reflect.getProperty(object, field);
-	    
-		// Workaround to be able to edit FlxPoints
-	    if (Std.is(property, FlxPoint)) {
-			var xString:String = valueDisplay.text.split(" |")[0];
-			xString = xString.substring(3, xString.length);
-			var xValue:Float = Std.parseFloat(xString);
-	      
-			var yString:String = valueDisplay.text.split("| ")[1];
-			yString = yString.substring(3, yString.length);
-			var yValue:Float = Std.parseFloat(yString);
-	     
-			if (!Math.isNaN(xValue)) 
-				Reflect.setField(property, "x", xValue);
-			if (!Math.isNaN(yValue)) 
-				Reflect.setField(property, "y", yValue);
-		}
-	    else
-			Reflect.setProperty(object, field, valueDisplay.text);
-
+		Reflect.setProperty(object, field, valueDisplay.text);
 		doneEditing();
 	}
 	

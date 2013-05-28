@@ -5,9 +5,9 @@ import org.flixel.tweens.FlxTween;
 import org.flixel.tweens.util.Ease;
 
 typedef Movable = {
-	public var immovable:Bool;
-	public function move(x:Float, y:Float):Void;
-}
+  public var immovable : Bool;
+  public function move(x : Float, y : Float):Void;
+};
 
 /**
  * Base class for motion Tweens.
@@ -61,7 +61,7 @@ class Motion extends FlxTween
 	{
 		if (_object != null)
 		{
-			_object.move(x, y); 
+			_object.move(x, y);
 		}
 	}
 }

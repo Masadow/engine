@@ -2,7 +2,6 @@ package org.flixel;
 
 import nme.display.Bitmap;
 import nme.display.BitmapData;
-import nme.display.BitmapInt32;
 import nme.display.BlendMode;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
@@ -12,7 +11,6 @@ import nme.geom.ColorTransform;
 import nme.geom.Matrix;
 import nme.geom.Point;
 import nme.geom.Rectangle;
-import org.flixel.plugin.texturepacker.TexturePackerData;
 import org.flixel.system.layer.DrawStackItem;
 import org.flixel.system.layer.frames.FlxFrame;
 import org.flixel.system.layer.Node;
@@ -37,13 +35,8 @@ class FlxSprite extends FlxObject
 	 */
 	public var facing(default, set_facing):Int;
 	
-	#if flash
-	public var color(get_color, set_color):UInt;
-	public var frame(get_frame, set_frame):UInt;
-	#else
-	public var color(get_color, set_color):BitmapInt32;
+	public var color(get_color, set_color):Int;
 	public var frame(get_frame, set_frame):Int;
-	#end
 	
 	/**
 	 * If the Sprite is flipped.
@@ -92,6 +85,11 @@ class FlxSprite extends FlxObject
 	#else
 	private var _blend:BlendMode;
 	private var _blendInt:Int = 0;
+	/**
+	 * Internal helper for less bitmapData manipulation (for FlxCollision Plugin)
+	 */
+	private var _calculatedPixelsIndex:Int = -1;
+	private var _calculatedPixelsFacing:Int = FlxObject.RIGHT;
 	#end
 	/**
 	 * Whether the current animation has finished its first (or only) loop.
@@ -128,7 +126,7 @@ class FlxSprite extends FlxObject
 	/**
 	 * Internal, stores all the animations that were added to this sprite.
 	 */
-	private var _animations:Hash<FlxAnim>;
+	private var _animations:Map<String, FlxAnim>;
 	/**
 	 * Internal, keeps track of the current animation being played.
 	 */
@@ -149,17 +147,13 @@ class FlxSprite extends FlxObject
 	/**
 	 * Internal tracker for the animation callback.  Default is null.
 	 * If assigned, will be called each time the current frame changes.
-	 * A function that has 3 parameters: a string name, a uint frame number, and a uint frame index.
+	 * A function that has 3 parameters: a string name, a int frame number, and a int frame index.
 	 */
 	private var _callback:String->Int->Int->Void;
 	/**
 	 * Internal tracker for color tint, used with Flash getter/setter.
 	 */
-	#if flash
-	private var _color:UInt;
-	#else
-	private var _color:BitmapInt32;
-	#end
+	private var _color:Int;
 	/**
 	 * Internal, stores the entire source graphic (not the current displayed animation frame), used with Flash getter/setter.
 	 */
@@ -204,22 +198,20 @@ class FlxSprite extends FlxObject
 	 */
 	public var _pixelsBackup:BitmapData;
 	
-	/**
-	 * Link to current FlxFrame from loaded atlas
-	 */
-	private var _flxFrame:FlxFrame;
-	
 	#if !flash
+	private var _flxFrame:FlxFrame;
 	private var _red:Float;
 	private var _green:Float;
 	private var _blue:Float;
 	
-	/**
-	 * These vars are being used for rendering in some of FlxSprite subclasses 
-	 * (FlxTileblock, FlxBar, FlxBitmapFont and FlxBitmapTextField)
-	 */
 	private var _halfWidth:Float;
 	private var _halfHeight:Float;
+
+	/**
+	 * Internal, additional rotation for sprite. Used in FlxSpriteTex.
+	 */
+	private var _additionalAngle : Float;
+	
 	#end
 	
 	/**
@@ -240,11 +232,7 @@ class FlxSprite extends FlxObject
 		offset = new FlxPoint();
 		origin = new FlxPoint();
 		scale = new FlxPoint(1.0, 1.0);
-		#if neko
-		_color = { rgb: 0xffffff, a:0x00 };
-		#else
 		_color = 0x00ffffff;
-		#end
 		alpha = 1.0;
 		#if flash
 		blend = null;
@@ -257,7 +245,7 @@ class FlxSprite extends FlxObject
 		finished = false;
 		paused = true;
 		facing = FlxObject.RIGHT;
-		_animations = new Hash<FlxAnim>();
+		_animations = new Map<String, FlxAnim>();
 		_flipped = 0;
 		_curAnim = null;
 		_curFrame = 0;
@@ -271,9 +259,10 @@ class FlxSprite extends FlxObject
 		_red = 1.0;
 		_green = 1.0;
 		_blue = 1.0;
-		#end
 		
 		_flxFrame = null;
+		_additionalAngle = 0.0;
+		#end
 		
 		if (SimpleGraphic == null)
 		{
@@ -281,6 +270,7 @@ class FlxSprite extends FlxObject
 		}
 		loadGraphic(SimpleGraphic);
 	}
+
 	
 	/**
 	 * Clean up memory.
@@ -320,10 +310,6 @@ class FlxSprite extends FlxObject
 		#else
 		_blend = null;
 		#end
-		
-		_textureData = null;
-		_flxFrame = null;
-		
 		super.destroy();
 	}
 	
@@ -345,6 +331,8 @@ class FlxSprite extends FlxObject
 		#if !flash
 		_pixels = FlxG.addBitmap(Graphic, false, Unique, Key);
 		_bitmapDataKey = FlxG._lastBitmapDataKey;
+		
+		_calculatedPixelsIndex = -1;
 		#else
 		_pixels = FlxG.addBitmap(Graphic, Reverse, Unique, Key);
 		#end
@@ -396,8 +384,6 @@ class FlxSprite extends FlxObject
 		}
 		_pixels = FlxG.addBitmap(Graphic, false, Unique, Key, Width, Height);
 		_bitmapDataKey = FlxG._lastBitmapDataKey;
-		#else
-		nullTextureData();
 		#end
 		
 		height = frameHeight = Height;
@@ -488,6 +474,7 @@ class FlxSprite extends FlxObject
 		
 		#if !flash
 		_bitmapDataKey = FlxG._lastBitmapDataKey;
+		_calculatedPixelsIndex = -1;
 		#end
 		
 		width = frameWidth = _pixels.width;
@@ -537,8 +524,6 @@ class FlxSprite extends FlxObject
 		
 		#if !flash
 		antialiasing = AntiAliasing;
-		#else
-		nullTextureData();
 		#end
 		
 		updateAtlasInfo();
@@ -555,11 +540,7 @@ class FlxSprite extends FlxObject
 	 * @param	Key			Optional parameter - specify a string key to identify this graphic in the cache.  Trumps Unique flag.
 	 * @return	This FlxSprite instance (nice for chaining stuff together, if you're into that).
 	 */
-	#if flash 
-	public function makeGraphic(Width:UInt, Height:UInt, ?Color:UInt = 0xffffffff, Unique:Bool = false, Key:String = null):FlxSprite
-	#else
-	public function makeGraphic(Width:Int, Height:Int, ?Color:BitmapInt32, Unique:Bool = false, Key:String = null):FlxSprite
-	#end
+	public function makeGraphic(Width:Int, Height:Int, ?Color:Int = 0xffffffff, Unique:Bool = false, Key:String = null):FlxSprite
 	{
 		#if !flash
 		if (Color == null)
@@ -572,8 +553,7 @@ class FlxSprite extends FlxObject
 		_pixels = FlxG.createBitmap(Width, Height, Color, Unique, Key);
 		#if !flash
 		_bitmapDataKey = FlxG._lastBitmapDataKey;
-		#else
-		nullTextureData();
+		_calculatedPixelsIndex = -1;
 		#end
 		width = frameWidth = _pixels.width;
 		height = frameHeight = _pixels.height;
@@ -583,150 +563,38 @@ class FlxSprite extends FlxObject
 	}
 	
 	/**
-	 * Loads TexturePacker atlas.
-	 * @param	Data		Atlas data holding links to json-data and atlas image
-	 * @param	Reverse		Whether you need this class to generate horizontally flipped versions of the animation frames. 
-	 * @param	Unique		Optional, whether the graphic should be a unique instance in the graphics cache.  Default is false.
-	 * @param	FrameName	Default frame to show. If null then will be used first available frame.
-	 * 
-	 * @return This FlxSprite instance (nice for chaining stuff together, if you're into that).
+	 * Resets some important variables for sprite optimization and rendering.
 	 */
-	public function loadImageFromTexture(Data:TexturePackerData, Reverse:Bool = false, Unique:Bool = false, FrameName:String = null):FlxSprite
-	{
-		bakedRotation = 0;
-		_textureData = Data;
-		
-		_pixels = FlxG.addBitmap(Data.assetName, false, Unique);
-		_bitmapDataKey = FlxG._lastBitmapDataKey;
-		
-		if (Reverse)
-		{
-			_flipped = _pixels.width >> 1;
-		}
-		else
-		{
-			_flipped = 0;
-		}
-		
-		updateAtlasInfo();
-		resetHelpers();
-		
-		if (FrameName != null)
-		{
-			frameName = FrameName;
-		}
-		
-		return this;
-	}
-	
-	/**
-	 * Creates a pre-rotated sprite sheet from provided image in atlas.
-	 * This can make a huge difference in graphical performance on flash target!
-	 * @param	Data			Atlas data holding links to json-data and atlas image
-	 * @param	Image			The image from atlas you want to rotate and stamp.
-	 * @param	Rotations		The number of rotation frames the final sprite should have.  For small sprites this can be quite a large number (360 even) without any problems.
-	 * @param	AntiAliasing	Whether to use high quality rotations when creating the graphic.  Default is false.
-	 * @param	AutoBuffer		Whether to automatically increase the image size to accomodate rotated corners.
-	 * 
-	 * @return This FlxSprite instance (nice for chaining stuff together, if you're into that).
-	 */
-	public function loadRotatedImageFromTexture(Data:TexturePackerData, Image:String, Rotations:Int = 16, AntiAliasing:Bool = false, AutoBuffer:Bool = false):FlxSprite
-	{
-		loadImageFromTexture(Data);
-		frameName = Image;
-		
-		#if !flash
-		antialiasing = AntiAliasing;
-		#else
-		var frameBitmapData:BitmapData = getFlxFrameBitmapData();
-		loadRotatedGraphic(frameBitmapData, Rotations, -1, AntiAliasing, AutoBuffer, Data.assetName + ":" + Image);
-		#end
-		
-		return this;
-	}
-	
-	/**
-	 * Resets _flashRect variable used for frame bitmapData calculation
-	 */
-	private function resetSize():Void
+	private function resetHelpers():Void
 	{
 		_flashRect.x = 0;
 		_flashRect.y = 0;
 		_flashRect.width = frameWidth;
 		_flashRect.height = frameHeight;
-	}
-	
-	/**
-	 * Resets frame size to _flxFrame dimensions
-	 */
-	private function resetFrameSize():Void
-	{
-		frameWidth = Std.int(_flxFrame.sourceSize.x);
-		frameHeight = Std.int(_flxFrame.sourceSize.y);
-		resetSize();
-	}
-	
-	/**
-	 * Resets sprite's size back to frame size
-	 */
-	public function resetSizeFromFrame():Void
-	{
-		width = frameWidth;
-		height = frameHeight;
-	}
-	
-	public function setOriginToCenter():Void
-	{
-		origin.make(frameWidth * 0.5, frameHeight * 0.5);
-	}
-	
-	/**
-	 * Resets some important variables for sprite optimization and rendering.
-	 */
-	private function resetHelpers():Void
-	{
-		resetSize();
 		_flashRect2.x = 0;
 		_flashRect2.y = 0;
 		_flashRect2.width = _pixels.width;
 		_flashRect2.height = _pixels.height;
-		setOriginToCenter();
+		
+		origin.make(frameWidth * 0.5, frameHeight * 0.5);
 		
 	#if flash
-		if ((framePixels == null) || (framePixels.width != frameWidth) || (framePixels.height != frameHeight))
+		if ((framePixels == null) || (framePixels.width != width) || (framePixels.height != height))
 		{
 			framePixels = new BitmapData(Std.int(width), Std.int(height));
 		}
 		framePixels.copyPixels(_pixels, _flashRect, _flashPointZero);
 		if (_useColorTransform) framePixels.colorTransform(_flashRect, _colorTransform);
-	#end
 		
-		if (_textureData == null)
+		frames = Std.int(_flashRect2.width / _flashRect.width * _flashRect2.height / _flashRect.height);
+	#else
+		frames = Std.int(_flashRect2.width / (_flashRect.width + 1) * _flashRect2.height / (_flashRect.height + 1));
+		if (frames == 0) frames = 1;
+		if (_flipped > 0)
 		{
-			#if flash
-			frames = Std.int(_flashRect2.width / _flashRect.width * _flashRect2.height / _flashRect.height);
-			#else
-			frames = Std.int(_flashRect2.width / (_flashRect.width + 1) * _flashRect2.height / (_flashRect.height + 1));
-			if (frames == 0) frames = 1;
-			#end
-		}
-		else
-		{
-			frames = _framesData.frames.length;
-		}
-	
-	#if flash
-		if (_textureData != null)
-		{
-	#end
-			if (_flipped > 0)
-			{
-				frames *= 2;
-			}
-	#if flash
+			frames *= 2;
 		}
 	#end
-		
 		_curIndex = 0;
 		#if !flash
 		if (_framesData != null)
@@ -745,16 +613,9 @@ class FlxSprite extends FlxObject
 		updateAnimation();
 	}
 	
-	/**
-	 * Checks if we need to use tinting for rendering
-	 */
 	inline public function isColored():Bool
 	{
-		#if !neko
 		return (_color < 0xffffff);
-		#else
-		return (_color.rgb < 0xffffff);
-		#end
 	}
 	
 	/**
@@ -864,24 +725,12 @@ class FlxSprite extends FlxObject
 			var ssy:Float = 0;
 			var ssx:Float = 0;
 			var csy:Float = 1;
-			
-			var x1:Float = (origin.x - _flxFrame.center.x);
-			var y1:Float = (origin.y - _flxFrame.center.y);
-			
-			var x2:Float = x1;
-			var y2:Float = y1;
-			
-			var facingMult:Int = ((_flipped != 0) && (facing == FlxObject.LEFT)) ? -1 : 1;
-			
-			// transformation matrix coefficients
-			var a:Float = csx;
-			var b:Float = ssy;
-			var c:Float = ssx;
-			var d:Float = csy;
-			
+			var x2:Float = 0.0;
+			var y2:Float = 0.0;
+
 			if (!simpleRenderSprite())
 			{
-				radians = -(angle + _flxFrame.additionalAngle) * FlxG.RAD;
+				radians = -(angle + _additionalAngle) * FlxG.RAD;
 				cos = Math.cos(radians);
 				sin = Math.sin(radians);
 				
@@ -890,43 +739,31 @@ class FlxSprite extends FlxObject
 				ssx = sin * scale.x;
 				csy = cos * scale.y;
 				
-				if (_flxFrame.rotated)
-				{
-					x2 = x1 * ssx - y1 * csy;
-					y2 = x1 * csx + y1 * ssy;
-					
-					a = csy;
-					b = ssx * facingMult;
-					c = ssy;
-					d = csx * facingMult;
-				}
-				else
-				{
-					x2 = x1 * csx + y1 * ssy;
-					y2 = -x1 * ssx + y1 * csy;
-					
-					a = csx * facingMult;
-					b = ssy;
-					c = ssx * facingMult;
-					d = csy;
-				}
+				var x1:Float = (origin.x - _halfWidth);
+				var y1:Float = (origin.y - _halfHeight);
+				x2 = x1 * csx + y1 * ssy;
+				y2 = -x1 * ssx + y1 * csy;
 			}
-			else
-			{
-				a *= facingMult;
-				c *= facingMult;
-			}
-			
+
 			currDrawData[currIndex++] = _point.x - x2;
 			currDrawData[currIndex++] = _point.y - y2;
 			
 			currDrawData[currIndex++] = _flxFrame.tileID;
 			
-			currDrawData[currIndex++] = a;
-			currDrawData[currIndex++] = b;
-			currDrawData[currIndex++] = -c;
-			currDrawData[currIndex++] = d;
-			
+			if ((_flipped != 0) && (facing == FlxObject.LEFT))
+			{
+				currDrawData[currIndex++] = -csx;
+				currDrawData[currIndex++] = ssy;
+				currDrawData[currIndex++] = ssx;
+				currDrawData[currIndex++] = csy;
+			}
+			else
+			{
+				currDrawData[currIndex++] = csx;
+				currDrawData[currIndex++] = ssy;
+				currDrawData[currIndex++] = -ssx;
+				currDrawData[currIndex++] = csy;
+			}
 			#if !js
 			if (isColored || isColoredCamera)
 			{
@@ -978,9 +815,6 @@ class FlxSprite extends FlxObject
 			_pixels.copyPixels(bitmapData, _flashRect2, _flashPoint, null, null, true);
 			_flashRect2.width = _pixels.width;
 			_flashRect2.height = _pixels.height;
-			
-			resetFrameBitmapDatas();
-			
 			#if flash
 			calcFrame();
 			#end
@@ -997,10 +831,10 @@ class FlxSprite extends FlxObject
 		}
 		_matrix.translate(X + Brush.origin.x, Y + Brush.origin.y);
 		var brushBlend:BlendMode = Brush.blend;
+		#if !flash
+		_calculatedPixelsIndex = -1;
+		#end
 		_pixels.draw(bitmapData, _matrix, null, brushBlend, null, Brush.antialiasing);
-		
-		resetFrameBitmapDatas();
-		
 		#if flash
 		calcFrame();
 		#end
@@ -1017,48 +851,39 @@ class FlxSprite extends FlxObject
 	 * @param	Color		The line's color.
 	 * @param	Thickness	How thick the line is in pixels (default value is 1).
 	 */
-	#if flash
-	public function drawLine(StartX:Float, StartY:Float, EndX:Float, EndY:Float, Color:UInt, Thickness:UInt = 1):Void
-	#else
-	public function drawLine(StartX:Float, StartY:Float, EndX:Float, EndY:Float, Color:BitmapInt32, Thickness:Int = 1):Void
-	#end
+	public function drawLine(StartX:Float, StartY:Float, EndX:Float, EndY:Float, Color:Int, Thickness:Int = 1):Void
 	{
 		//Draw line
 		var gfx:Graphics = FlxG.flashGfx;
 		gfx.clear();
 		gfx.moveTo(StartX, StartY);
-		#if !neko
 		var alphaComponent:Float = ((Color >> 24) & 255) / 255;
-		#else
-		var alphaComponent:Float = Color.a / 255;
-		#end
 		if (alphaComponent <= 0)
 		{
 			alphaComponent = 1;
 		}
-		#if neko
-		gfx.lineStyle(Thickness, Color.rgb, alphaComponent);
-		#else
 		gfx.lineStyle(Thickness, Color, alphaComponent);
-		#end
 		gfx.lineTo(EndX, EndY);
 		
 		//Cache line to bitmap
 		_pixels.draw(FlxG.flashGfxSprite);
 		dirty = true;
 		
-		resetFrameBitmapDatas();
+		#if !flash
+		_calculatedPixelsIndex = -1;
+		#end
+		
 		updateAtlasInfo(true);
 	}
 	
 	/**
 	 * This function draws a circle on this sprite at position X,Y
 	 * with the specified color.
-	 * @param X X coordinate of the circle's center
-	 * @param Y Y coordinate of the circle's center
-	 * @param Radius Radius of the circle
-	 * @param Color Color of the circle
-	*/
+	 * @param   X           X coordinate of the circle's center
+	 * @param   Y           Y coordinate of the circle's center
+	 * @param   Radius      Radius of the circle
+	 * @param   Color       Color of the circle
+	 */
 	public function drawCircle(X:Float, Y:Float, Radius:Float, Color:Int):Void
 	{
 		var gfx:Graphics = FlxG.flashGfx;
@@ -1070,7 +895,10 @@ class FlxSprite extends FlxObject
 		_pixels.draw(FlxG.flashGfxSprite);
 		dirty = true;
 		
-		resetFrameBitmapDatas();
+		#if !flash
+		_calculatedPixelsIndex = -1;
+		#end
+		
 		updateAtlasInfo(true);
 	}
 	
@@ -1078,19 +906,16 @@ class FlxSprite extends FlxObject
 	 * Fills this sprite's graphic with a specific color.
 	 * @param	Color		The color with which to fill the graphic, format 0xAARRGGBB.
 	 */
-	#if flash
-	public function fill(Color:UInt):Void
-	#else
-	public function fill(Color:BitmapInt32):Void
-	#end
+	public function fill(Color:Int):Void
 	{
 		_pixels.fillRect(_flashRect2, Color);
 		if (_pixels != framePixels)
 		{
 			dirty = true;
 		}
-		
-		resetFrameBitmapDatas();
+		#if !flash
+		_calculatedPixelsIndex = -1;
+		#end
 		updateAtlasInfo(true);
 	}
 	
@@ -1104,11 +929,11 @@ class FlxSprite extends FlxObject
 		if (bakedRotation > 0)
 		{
 			var oldIndex:Int = _curIndex;
-	#if flash
+#if flash
 			var angleHelper:Int = Math.floor((angle) % 360);
-	#else
-			var angleHelper:Int = Math.floor((angle + _flxFrame.additionalAngle) % 360);
-	#end
+#else
+			var angleHelper:Int = Math.floor((angle + _additionalAngle) % 360);
+#end
 			
 			#if flash
 			if (angleHelper < 0)
@@ -1156,14 +981,10 @@ class FlxSprite extends FlxObject
 				_curIndex = _curAnim.frames[_curFrame];
 				#if !flash
 				if (_framesData != null)
-				#else
-				if (_textureData != null)
-				#end
 				{
 					_flxFrame = _framesData.frames[_curIndex];
-					resetFrameSize();
 				}
-				
+				#end
 				dirty = true;
 			}
 		}
@@ -1215,117 +1036,10 @@ class FlxSprite extends FlxObject
 	}
 	
 	/**
-	 * Adds a new animation to the sprite.
-	 * @param	Name			What this animation should be called (e.g. "run").
-	 * @param	FrameNames		An array of image names from atlas indicating what frames to play in what order.
-	 * @param	FrameRate		The speed in frames per second that the animation should play at (e.g. 40 fps).
-	 * @param	Looped			Whether or not the animation is looped or just plays once.
-	 */
-	public function addAnimationByNamesFromTexture(Name:String, FrameNames:Array<String>, FrameRate:Int = 30, Looped:Bool = true):Void
-	{
-		if (_atlas != null && _textureData != null)
-		{
-			var indices:Array<Int> = new Array<Int>();
-			var l:Int = FrameNames.length;
-			for (i in 0...l)
-			{
-				var name:String = FrameNames[i];
-				if (_framesData.framesHash.exists(name))
-				{
-					var frameToAdd:FlxFrame = _framesData.framesHash.get(name);
-					indices.push(getFrameIndex(frameToAdd));
-				}
-			}
-			
-			if (indices.length > 0)
-			{
-				_animations.set(Name, new FlxAnim(Name, indices, FrameRate, Looped));
-			}
-		}
-	}
-	
-	/**
-	 * Adds a new animation to the sprite.
-	 * @param	Name			What this animation should be called (e.g. "run").
-	 * @param	Prefix			Common beginning of image names in atlas (e.g. "tiles-")
-	 * @param	Indicies		An array of numbers indicating what frames to play in what order (e.g. 1, 2, 3).
-	 * @param	Postfix			Common ending of image names in atlas (e.g. ".png")
-	 * @param	FrameRate		The speed in frames per second that the animation should play at (e.g. 40 fps).
-	 * @param	Looped			Whether or not the animation is looped or just plays once.
-	 */
-	public function addAnimationByIndiciesFromTexture(Name:String, Prefix:String, Indicies:Array<Int>, Postfix:String, FrameRate:Int = 30, Looped:Bool = true):Void
-	{
-		if (_atlas != null && _textureData != null)
-		{
-			var frameIndices:Array<Int> = new Array<Int>();
-			var l:Int = Indicies.length;
-			for (i in 0...l)
-			{
-				var name:String = Prefix + Indicies[i] + Postfix;
-				if (_framesData.framesHash.exists(name))
-				{
-					var frameToAdd:FlxFrame = _framesData.framesHash.get(name);
-					frameIndices.push(getFrameIndex(frameToAdd));
-				}
-			}
-			
-			if (frameIndices.length > 0)
-			{
-				_animations.set(Name, new FlxAnim(Name, frameIndices, FrameRate, Looped));
-			}
-		}
-	}
-	
-	/**
-	 * Adds a new animation to the sprite.
-	 * @param	Name			What this animation should be called (e.g. "run").
-	 * @param	Prefix			Common beginning of image names in atlas (e.g. "tiles-")
-	 * @param	FrameRate		The speed in frames per second that the animation should play at (e.g. 40 fps).
-	 * @param	Looped			Whether or not the animation is looped or just plays once.
-	*/
-	public function addAnimationByPrefixFromTexture(Name:String, Prefix:String, FrameRate:Int = 30, Looped:Bool = true):Void
-	{
-		if (_atlas != null && _textureData != null)
-		{
-			var animFrames:Array<FlxFrame> = new Array<FlxFrame>();
-			var l:Int = _framesData.frames.length;
-			for (i in 0...l)
-			{
-				if (StringTools.startsWith(_framesData.frames[i].name, Prefix))
-				{
-					animFrames.push(_framesData.frames[i]);
-				}
-			}
-			
-			if (animFrames.length > 0)
-			{
-				var name:String = animFrames[0].name;
-				var postFix:String = name.substring(name.indexOf(".", Prefix.length), name.length);
-				FlxSprite.prefixLength = Prefix.length;
-				FlxSprite.postfixLength = postFix.length;
-				animFrames.sort(FlxSprite.frameSortFunction);
-				var frameIndices:Array<Int> = new Array<Int>();
-				
-				l = animFrames.length;
-				for (i in 0...l)
-				{
-					frameIndices.push(getFrameIndex(animFrames[i]));
-				}
-				
-				_animations.set(Name, new FlxAnim(Name, frameIndices, FrameRate, Looped));
-			}
-		}
-	}
-	
-	/**
 	 * Pass in a function to be called whenever this sprite's animation changes.
-	 * @param	AnimationCallback		A function that has 3 parameters: a string name, a uint frame number, and a uint frame index.
+	 * @param	AnimationCallback		A function that has 3 parameters: a string name, a int frame number, and a int frame index.
 	 */
-	#if flash
-	public function addAnimationCallback(AnimationCallback:String->UInt->UInt->Void):Void
-	#else
 	public function addAnimationCallback(AnimationCallback:String->Int->Int->Void):Void
-	#end
 	{
 		_callback = AnimationCallback;
 	}
@@ -1345,16 +1059,12 @@ class FlxSprite extends FlxObject
 		}
 		_curFrame = 0;
 		_curIndex = 0;
-		
-		#if flash
-		if (_textureData != null)
-		#else
+		#if !flash
 		if (_framesData != null)
-		#end
 		{
 			_flxFrame = _framesData.frames[_curIndex];
 		}
-		
+		#end
 		_frameTimer = 0;
 		if (_animations.exists(AnimName))
 		{
@@ -1368,22 +1078,18 @@ class FlxSprite extends FlxObject
 				finished = false;
 			}
 			_curIndex = _curAnim.frames[_curFrame];
-			
-			#if flash
-			if (_textureData != null)
-			#else
+			#if !flash
 			if (_framesData != null)
-			#end
 			{
 				_flxFrame = _framesData.frames[_curIndex];
 			}
-			
+			#end
 			dirty = true;
 			paused = false;
 			return;
 		}
 		
-		FlxG.warn("No animation called \"" + AnimName + "\"");
+		FlxG.warn("No animation called \""+AnimName+"\"");
 	}
 	
 	/**
@@ -1404,14 +1110,10 @@ class FlxSprite extends FlxObject
 		_curIndex = Std.int(FlxG.random() * (_pixels.width / frameWidth));
 		#if !flash
 		if (_framesData != null)
-		#else
-		if (_textureData != null)
-		#end
 		{
 			_flxFrame = _framesData.frames[_curIndex];
-			resetFrameSize();
 		}
-		
+		#end
 		dirty = true;
 	}
 	
@@ -1438,18 +1140,7 @@ class FlxSprite extends FlxObject
 		}
 	}
 	
-	/**
-	 * Replaces all pixels with specified Color with NewColor pixels
-	 * @param	Color				Color to replace
-	 * @param	NewColor			New color
-	 * @param	FetchPositions		Whether we need to store positions of pixels which colors were replaced
-	 * @return	Array replaced pixels positions
-	 */
-	#if flash
-	public function replaceColor(Color:UInt, NewColor:UInt, FetchPositions:Bool = false):Array<FlxPoint>
-	#else
-	public function replaceColor(Color:BitmapInt32, NewColor:BitmapInt32, FetchPositions:Bool = false):Array<FlxPoint>
-	#end
+	public function replaceColor(Color:Int, NewColor:Int, FetchPositions:Bool = false):Array<FlxPoint>
 	{
 		var positions:Array<FlxPoint> = null;
 		if (FetchPositions)
@@ -1466,7 +1157,7 @@ class FlxSprite extends FlxObject
 			column = 0;
 			while(column < columns)
 			{
-				if(_pixels.getPixel32(column,row) == Color)
+				if(_pixels.getPixel32(column,row) == cast Color)
 				{
 					_pixels.setPixel32(column,row,NewColor);
 					if (FetchPositions)
@@ -1480,17 +1171,16 @@ class FlxSprite extends FlxObject
 			row++;
 		}
 		
-		resetFrameBitmapDatas();
 		updateAtlasInfo(true);
 		return positions;
 	}
+	
+	public var pixels(get_pixels, set_pixels):BitmapData;
 	
 	/**
 	 * Set <code>pixels</code> to any <code>BitmapData</code> object.
 	 * Automatically adjust graphic size and render helpers.
 	 */
-	public var pixels(get_pixels, set_pixels):BitmapData;
-	
 	private function get_pixels():BitmapData
 	{
 		return _pixels;
@@ -1512,8 +1202,8 @@ class FlxSprite extends FlxObject
 			_bitmapDataKey = FlxG.getUniqueBitmapKey();
 			FlxG.addBitmap(Pixels, false, false, _bitmapDataKey);
 		}
-		#else
-		nullTextureData();
+		
+		_calculatedPixelsIndex = -1;
 		#end
 		updateAtlasInfo(true);
 		return _pixels;
@@ -1593,11 +1283,7 @@ class FlxSprite extends FlxObject
 	 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
 	 * Tints the whole sprite to be this color (similar to OpenGL vertex colors).
 	 */
-	#if flash
-	private function get_color():UInt
-	#else
-	private function get_color():BitmapInt32
-	#end
+	private function get_color():Int
 	{
 		return _color;
 	}
@@ -1605,45 +1291,8 @@ class FlxSprite extends FlxObject
 	/**
 	 * @private
 	 */
-	#if flash
-	private function set_color(Color:UInt):UInt
-	#else
-	private function set_color(Color:BitmapInt32):BitmapInt32
-	#end
+	private function set_color(Color:Int):Int
 	{
-		#if neko
-		if (_color.rgb == Color.rgb)
-		{
-			return _color;
-		}
-		_color = Color;
-		if ((alpha != 1) || (_color.rgb != 0xffffff))
-		{
-			if (_colorTransform == null)
-			{
-				_colorTransform = new ColorTransform((_color.rgb >> 16) / 255, (_color.rgb >> 8 & 0xff) / 255, (_color.rgb & 0xff) / 255, alpha);
-			}
-			else
-			{
-				_colorTransform.redMultiplier = (_color.rgb >> 16) / 255;
-				_colorTransform.greenMultiplier = (_color.rgb >> 8 & 0xff) / 255;
-				_colorTransform.blueMultiplier = (_color.rgb & 0xff) / 255;
-				_colorTransform.alphaMultiplier = alpha;
-			}
-			_useColorTransform = true;
-		}
-		else
-		{
-			if (_colorTransform != null)
-			{
-				_colorTransform.redMultiplier = 1;
-				_colorTransform.greenMultiplier = 1;
-				_colorTransform.blueMultiplier = 1;
-				_colorTransform.alphaMultiplier = 1;
-			}
-			_useColorTransform = false;
-		}
-		#else
 		Color &= 0x00ffffff;
 		if (_color == Color)
 		{
@@ -1676,7 +1325,6 @@ class FlxSprite extends FlxObject
 			}
 			_useColorTransform = false;
 		}
-		#end
 		
 		dirty = true;
 		
@@ -1684,10 +1332,6 @@ class FlxSprite extends FlxObject
 		_red = (_color >> 16) / 255;
 		_green = (_color >> 8 & 0xff) / 255;
 		_blue = (_color & 0xff) / 255;
-		#elseif neko
-		_red = (_color.rgb >> 16) / 255;
-		_green = (_color.rgb >> 8 & 0xff) / 255;
-		_blue = (_color.rgb & 0xff) / 255;
 		#end
 		
 		return _color;
@@ -1698,11 +1342,7 @@ class FlxSprite extends FlxObject
 	 * 
 	 * @param	Frame	The frame you want to display.
 	 */
-	#if flash
-	private function get_frame():UInt
-	#else
 	private function get_frame():Int
-	#end
 	{
 		return _curIndex;
 	}
@@ -1710,69 +1350,18 @@ class FlxSprite extends FlxObject
 	/**
 	 * @private
 	 */
-	#if flash
-	private function set_frame(Frame:UInt):UInt
-	#else
 	private function set_frame(Frame:Int):Int
-	#end
 	{
 		_curAnim = null;
 		_curIndex = Frame % frames;
 		#if !flash
 		if (_framesData != null)
-		#else
-		if (_textureData != null)
-		#end
 		{
 			_flxFrame = _framesData.frames[_curIndex];
-			resetFrameSize();
 		}
-		
+		#end
 		dirty = true;
 		return Frame;
-	}
-	
-	/**
-	 * Tell the sprite to change to a frame with specific name.
-	 * Useful for sprites with loaded TexturePacker atlas.
-	 */
-	public var frameName(get_frameName, set_frameName):String;
-	
-	private function get_frameName():String
-	{
-		if (_flxFrame != null && _textureData != null)
-		{
-			return _flxFrame.name;
-		}
-		
-		return null;
-	}
-	
-	private function set_frameName(value:String):String
-	{
-		if (_textureData != null && _framesData != null && _framesData.framesHash.exists(value))
-		{
-			_curAnim = null;
-			if (_framesData != null)
-			{
-				_flxFrame = _framesData.framesHash.get(value);
-				_curIndex = getFrameIndex(_flxFrame);
-				resetFrameSize();
-			}
-			dirty = true;
-		}
-		
-		return value;
-	}
-	
-	/**
-	 * Helper function used for finding index of FlxFrame in _framesData's frames array
-	 * @param	Frame	FlxFrame to find
-	 * @return	position of specified FlxFrame object.
-	 */
-	public function getFrameIndex(Frame:FlxFrame):Int
-	{
-		return FlxU.ArrayIndexOf(_framesData.frames, Frame);
 	}
 	
 	/**
@@ -1822,11 +1411,7 @@ class FlxSprite extends FlxObject
 		var result:Bool = false;
 		var notRotated = angle == 0.0;
 #if !flash
-		// TODO: make less checks in subclasses
-		if (_flxFrame != null)
-		{
-			notRotated = notRotated && _flxFrame.additionalAngle != 0.0;
-		}
+		notRotated = notRotated && _additionalAngle != 0.0;
 #end
 		if ((notRotated || (bakedRotation > 0)) && (scale.x == 1) && (scale.y == 1))
 		{
@@ -1859,11 +1444,7 @@ class FlxSprite extends FlxObject
 	 * @param	Camera		Specify which game camera you want.  If null getScreenXY() will just grab the first global camera.
 	 * @return	Whether or not the point overlaps this object.
 	 */
-	#if flash
-	public function pixelsOverlapPoint(point:FlxPoint, Mask:UInt = 0xFF, Camera:FlxCamera = null):Bool
-	#else
 	public function pixelsOverlapPoint(point:FlxPoint, Mask:Int = 0xFF, Camera:FlxCamera = null):Bool
-	#end
 	{
 		if (Camera == null)
 		{
@@ -1884,14 +1465,31 @@ class FlxSprite extends FlxObject
 		}
 		else // 2. Check pixel at (_flashPoint.x, _flashPoint.y)
 		{
-			var frameData:BitmapData = getFlxFrameBitmapData();
-			var pixelColor:BitmapInt32 = frameData.getPixel32(Std.int(_flashPoint.x), Std.int(_flashPoint.y));
-			#if !neko
+			// this code is from calcFrame() method
+			var indexX:Int = _curIndex * (frameWidth + 1);
+			var indexY:Int = 0;
+
+			//Handle sprite sheets
+			var widthHelper:Int = (_flipped != 0) ? _flipped : _pixels.width;
+			if(indexX >= widthHelper)
+			{
+				indexY = Std.int(indexX / widthHelper) * (frameHeight + 1);
+				indexX %= widthHelper;
+			}
+			
+			var pixelColor:Int = FlxG.TRANSPARENT;
+			// handle reversed sprites
+			if ((_flipped != 0) && (facing == FlxObject.LEFT))
+			{
+				pixelColor = _pixels.getPixel32(Std.int(indexX + frameWidth - _flashPoint.x), Std.int(indexY + _flashPoint.y));
+			}
+			else
+			{
+				pixelColor = _pixels.getPixel32(Std.int(indexX + _flashPoint.x), Std.int(indexY + _flashPoint.y));
+			}
+			// end of code from calcFrame() method
 			var pixelAlpha:Int = (pixelColor >> 24) & 0xFF;
-			#else
-			var pixelAlpha:Int = pixelColor.a;
-			#end
-			return (pixelAlpha * alpha >= Mask);
+			return (pixelAlpha >= Mask);
 		}
 		#end
 	}
@@ -1906,55 +1504,67 @@ class FlxSprite extends FlxObject
 	#end
 	{
 	#if !flash
-		// TODO: Maybe remove 'AreYouSure' parameter
 		if (AreYouSure)
-	#else
-		if (_flxFrame != null)
-	#end
 		{
-			if ((framePixels == null) || (framePixels.width != frameWidth) || (framePixels.height != frameHeight))
+			if (_calculatedPixelsIndex == _curIndex && _calculatedPixelsFacing == facing)
 			{
-				if (framePixels != null)
-				{
-					framePixels.dispose();
-					framePixels = new BitmapData(Std.int(_flxFrame.sourceSize.x), Std.int(_flxFrame.sourceSize.y));
-				}
+				return;
 			}
-			
-			framePixels.copyPixels(getFlxFrameBitmapData(), _flashRect, _flashPointZero);
-		}
-	#if flash
-		else
-		{
+			if ((framePixels == null) || (framePixels.width != width) || (framePixels.height != height))
+			{
+				framePixels = new BitmapData(Std.int(frameWidth), Std.int(frameHeight));
+			}
+	#end
+			// TODO: Maybe remove 'AreYouSure' parameter
+			#if flash
 			var indexX:Int = _curIndex * frameWidth;
+			#else
+			var indexX:Int = _curIndex * (frameWidth + 1);
+			_calculatedPixelsIndex = _curIndex;
+			_calculatedPixelsFacing = facing;
+			#end
 			var indexY:Int = 0;
 
 			//Handle sprite sheets
+			#if flash
 			var widthHelper:Int = (_flipped != 0) ? _flipped : _pixels.width;
-			if (indexX + frameWidth > widthHelper)
+			#else
+			var widthHelper:Int = _pixels.width;
+			#end
+			if (indexX >= widthHelper)
 			{
+				#if flash
 				indexY = Std.int(indexX / widthHelper) * frameHeight;
+				#else
+				indexY = Std.int(indexX / widthHelper) * (frameHeight + 1);
+				#end
 				indexX %= widthHelper;
 			}
 			
+			#if flash
 			//handle reversed sprites
 			if ((_flipped != 0) && (facing == FlxObject.LEFT))
 			{
 				indexX = (_flipped << 1) - indexX - frameWidth;
 			}
+			#end
 			
 			//Update display bitmap
 			_flashRect.x = indexX;
 			_flashRect.y = indexY;
 			framePixels.copyPixels(_pixels, _flashRect, _flashPointZero);
+			#if !flash
+			if ((_flipped != 0) && (facing == FlxObject.LEFT))
+			{
+				var temp:BitmapData = framePixels.clone();
+				_matrix.identity();
+				_matrix.scale( -1, 1);
+				_matrix.translate(temp.width, 0);
+				framePixels.fillRect(framePixels.rect, FlxG.TRANSPARENT);
+				framePixels.draw(temp, _matrix);
+			}
+			#end
 			_flashRect.x = _flashRect.y = 0;
-		}
-	#end
-		
-	#if !flash
-		if (AreYouSure)
-		{
-	#end
 			if (_useColorTransform) 
 			{
 				framePixels.colorTransform(_flashRect, _colorTransform);
@@ -2016,11 +1626,9 @@ class FlxSprite extends FlxObject
 			_pixelsBackup.copyPixels(_pixels, _pixels.rect, _flashPointZero);
 			
 		}
+		_calculatedPixelsIndex = -1;
 		updateAtlasInfo(true);
 		#end
-		
-		// TODO: check this later
-		resetFrameBitmapDatas();
 		
 		drawFrame(true); // at the end of calcframe() filters will be applied.
 	}
@@ -2036,12 +1644,7 @@ class FlxSprite extends FlxObject
 	{
 		var tempSpr:FlxSprite = new FlxSprite(0, 0, _pixels);
 		var diffSize:FlxPoint = new FlxPoint(width - frameWidth, height - frameHeight);
-		// TODO: check this later for flash target when sprite have _textureData
-		#if neko
-		makeGraphic(width, height, {rgb: 0x0, a: 0x0}, true);
-		#else 
-		makeGraphic(width, height, 0x0, true);
-		#end
+		makeGraphic(width, height, 0x0);
 		
 		stamp(tempSpr, Std.int(diffSize.x / 2), Std.int(diffSize.y / 2));
 		
@@ -2086,6 +1689,11 @@ class FlxSprite extends FlxObject
 			filters.pop();
 		}
 		
+		
+		#if !flash
+		_calculatedPixelsIndex = -1;
+		#end
+		
 		updateAtlasInfo(true);
 		drawFrame(true);
 		
@@ -2126,13 +1734,7 @@ class FlxSprite extends FlxObject
 		#if flash
 		return (((angle == 0) || (bakedRotation > 0)) && (scale.x == 1) && (scale.y == 1) && (blend == null));
 		#else
-		// TODO: fix this for subclasses (make less checks)
-		var result:Bool = (((angle == 0) || (bakedRotation > 0)) && (scale.x == 1) && (scale.y == 1));
-		if (_flxFrame != null)
-		{
-			result = result && ((angle == 0 && _flxFrame.additionalAngle == 0) || (bakedRotation > 0)); // (((angle == 0 && _flxFrame.additionalAngle == 0) || (bakedRotation > 0)) && (scale.x == 1) && (scale.y == 1));
-		}
-		return result;
+		return (((angle == 0 && _additionalAngle == 0) || (bakedRotation > 0)) && (scale.x == 1) && (scale.y == 1));
 		#end
 	}
 	
@@ -2146,25 +1748,40 @@ class FlxSprite extends FlxObject
 	
 	private function set_blend(value:BlendMode):BlendMode 
 	{
-		if (value != null)
+		switch (value)
 		{
-			switch (value)
-			{
-				case BlendMode.ADD:
-					_blendInt = Tilesheet.TILE_BLEND_ADD;
-				default:
-					_blendInt = 0;
-			}
-		}
-		else
-		{
-			_blendInt = 0;
+			case BlendMode.ADD:
+				_blendInt = Tilesheet.TILE_BLEND_ADD;
+			default:
+				_blendInt = 0;
 		}
 		
 		_blend = value;
 		return value;
 	}
 	#end
+	
+	/**
+	 * Use this method for creating tileSheet for FlxSprite. Must be called after makeGraphic(), loadGraphic or loadRotatedGraphic().
+	 * If you forget to call it then you will not see this FlxSprite on c++ target
+	 */
+	override public function updateFrameData():Void
+	{
+	#if !flash
+		if (_node != null && frameWidth >= 1 && frameHeight >= 1)
+		{
+			if (frames > 1)
+			{
+				_framesData = _node.getSpriteSheetFrames(Std.int(frameWidth), Std.int(frameHeight), null, 0, 0, 0, 0, 1, 1);
+			}
+			else
+			{
+				_framesData = _node.getSpriteSheetFrames(Std.int(frameWidth), Std.int(frameHeight));
+			}
+			_flxFrame = _framesData.frames[_curIndex];
+		}
+	#end
+	}
 	
 	override public function overlapsPoint(point:FlxPoint, InScreenSpace:Bool = false, Camera:FlxCamera = null):Bool
 	{
@@ -2188,111 +1805,4 @@ class FlxSprite extends FlxObject
 		return (X > _point.x - 0.5 * width * (scale.x - 1)) && (X < _point.x + width + 0.5 * width * (scale.x - 1)) && (Y > _point.y - 0.5 * height * (scale.y - 1)) && (Y < _point.y + height + 0.5 * height * (scale.y - 1));
 	}
 	
-	/**
-	 * Use this method for creating tileSheet for FlxSprite. Must be called after makeGraphic(), loadGraphic or loadRotatedGraphic().
-	 * If you forget to call it then you will not see this FlxSprite on c++ target
-	 */
-	override public function updateFrameData():Void
-	{
-	#if !flash
-		if (_textureData == null && _node != null && frameWidth >= 1 && frameHeight >= 1)
-		{
-			if (frames > 1)
-			{
-				_framesData = _node.getSpriteSheetFrames(Std.int(frameWidth), Std.int(frameHeight), null, 0, 0, 0, 0, 1, 1);
-			}
-			else
-			{
-				_framesData = _node.getSpriteSheetFrames(Std.int(frameWidth), Std.int(frameHeight));
-			}
-			_flxFrame = _framesData.frames[_curIndex];
-			return;
-		}
-		else
-	#end
-			if (_textureData != null && _node != null)
-		{
-			_framesData = _node.getTexturePackerFrames(_textureData);
-			_flxFrame = _framesData.frames[0];
-			resetFrameSize();
-			resetSizeFromFrame();
-		}
-	}
-	
-	/**
-	 * Helper constants used for animation's frame sorting
-	 */
-	private static var prefixLength:Int = 0;
-	private static var postfixLength:Int = 0;
-	
-	/**
-	 * Helper frame sorting function used by addAnimationByPrefixFromTexture() method
-	 */
-	static function frameSortFunction(frame1:FlxFrame, frame2:FlxFrame):Int
-	{
-		var name1:String = frame1.name;
-		var name2:String = frame2.name;
-		
-		var num1:Int = Std.parseInt(name1.substring(prefixLength, name1.length - postfixLength));
-		var num2:Int = Std.parseInt(name2.substring(prefixLength, name2.length - postfixLength));
-		
-		if (num1 > num2)
-		{
-			return 1;
-		}
-		else if (num2 > num1)
-		{
-			return -1;
-		}
-
-		return 0;
-	}
-	
-	/**
-	 * Retrieves BitmapData of current FlxFrame
-	 */
-	public function getFlxFrameBitmapData():BitmapData
-	{
-		if (_flxFrame != null)
-		{
-			if (facing == FlxObject.LEFT && flipped > 0)
-			{
-				return _flxFrame.getReversedBitmap();
-			}
-			else
-			{
-				return _flxFrame.getBitmap();
-			}
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Helper function. Useful for flash target when switching to standard renderer
-	 */
-	private function nullTextureData():Void
-	{
-		_textureData = null;
-		_flxFrame = null;
-		_framesData = null;
-		_node = null;
-		_atlas = null;
-	}
-	
-	/**
-	 * Helper function for reseting precalculated FlxFrame bitmapdatas.
-	 * Useful when _pixels bitmapdata changes (e.g. after stamp(), drawLine() and other similar method calls).
-	 */
-	private function resetFrameBitmapDatas():Void
-	{
-		#if flash
-		if (_textureData != null)
-		{
-		#end
-			_atlas._tileSheetData.destroyFrameBitmapDatas();
-		#if flash
-		}
-		#end
-	}
 }

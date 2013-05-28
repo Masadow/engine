@@ -32,6 +32,9 @@ class FlxPhysState extends FlxState
 	 * Contains the sprite used for nape debug graphics.
 	 */
 	private var _physDbgSpr:ShapeDebug;
+	
+	public static var debug(get_debug, null):ShapeDebug;
+	public static function get_debug() { return cast(FlxG.state, FlxPhysState)._physDbgSpr; }
 	#end
 	
 	/**
@@ -115,19 +118,19 @@ class FlxPhysState extends FlxState
 	 */
 	override public function update():Void 
 	{
-		space.step(FlxG.elapsed, velocityIterations, positionIterations);
+		space.step(FlxG.elapsed * FlxG.timeScale, velocityIterations, positionIterations);
 		super.update();
 	}
 	
 	/**
 	 * Override this method to draw debug physics shapes
 	 */
-	override public function draw():Void
+	override public function draw():Void 
 	{
-		super.draw(); 
+		super.draw();
 		#if !FLX_NO_DEBUG
 		drawPhysDebug();
-		#end 
+		#end
 	}
 	
 	/**
@@ -189,18 +192,10 @@ class FlxPhysState extends FlxState
 		_physDbgSpr.display.scaleX = zoom; 
 		_physDbgSpr.display.scaleY = zoom;
 		
-		if (cam.target == null) 
-		{
-			_physDbgSpr.display.x = cam.scroll.x * zoom;
-			_physDbgSpr.display.y = cam.scroll.y * zoom;
-		} 
-		else
-		{
-			_physDbgSpr.display.x = -cam.scroll.x * zoom;
-			_physDbgSpr.display.y = -cam.scroll.y * zoom;
-			_physDbgSpr.display.x += (FlxG.width - FlxG.width * zoom) / 2; 
-			_physDbgSpr.display.y += (FlxG.height - FlxG.height * zoom) / 2;
-		}
+		_physDbgSpr.display.x = -cam.scroll.x * zoom;
+		_physDbgSpr.display.y = -cam.scroll.y * zoom;
+		_physDbgSpr.display.x += (FlxG.width - FlxG.width * zoom) / 2; 
+		_physDbgSpr.display.y += (FlxG.height - FlxG.height * zoom) / 2;
 	}
 	#end
 }

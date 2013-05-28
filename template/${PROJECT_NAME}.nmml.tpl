@@ -52,7 +52,7 @@
     <!--Disable the Flixel core debugger-->
     <!--<set name="FLX_NO_DEBUG" />-->
 	
-    <!--Disable the Flixel core recording system if you're not using it-->
+    <!--Disable the Flixel core recording system if your not using it-->
     <!--<set name="FLX_NO_RECORD" />-->
 	
 	<!--Optimise inputs, be careful you will get null errors if you don't use conditionals in your game-->
@@ -61,9 +61,9 @@
     <!--<set name="FLX_NO_TOUCH" if="desktop" />-->
     <!--<set name="FLX_NO_JOYSTICK" />-->
     <!--<set name="thread" />-->
-	
-	<!--Enable right and middle click support for the mouse. Requires flash player version 11.2 or higher. Doesn't work for HTML5. -->
-	<!--<set name="FLX_MOUSE_ADVANCED" />-->
-	<!--<app swf-version="11.2" />--> 
+
+    <!--Enable right and middle click support for the mouse. Requires flash player version 11.2 or higher. Doesn't work for HTML5. -->
+    <!--<set name="FLX_MOUSE_ADVANCED" />-->
+    <!--<app swf-version="11.2" />-->
 
 </project>

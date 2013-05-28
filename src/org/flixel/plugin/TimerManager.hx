@@ -38,7 +38,6 @@ class TimerManager extends FlxBasic
 	 */
 	override public function update():Void
 	{
-		if (FlxG.paused) return;
 		var i:Int = _timers.length - 1;
 		var timer:FlxTimer;
 		while(i >= 0)

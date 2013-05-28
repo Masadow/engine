@@ -4,12 +4,10 @@ import nme.display.BitmapData;
 import nme.display.Tilesheet;
 import nme.geom.Point;
 import nme.geom.Rectangle;
-import nme.ObjectHash;
 
-// TODO: check image caching for tilesheets and their disposing
 class TileSheetExt extends Tilesheet
 {
-	private static var _tileSheetCache:ObjectHash<BitmapData, TileSheetExt> = new ObjectHash<BitmapData, TileSheetExt>();
+	private static var _tileSheetCache:Map<BitmapData, TileSheetExt> = new Map<BitmapData, TileSheetExt>();
 	
 	public static var _DRAWCALLS:Int = 0;
 	
@@ -54,26 +52,21 @@ class TileSheetExt extends Tilesheet
 	{
 		for (key in _tileSheetCache.keys())
 		{
-			if (key != null)
-			{
-				var temp:TileSheetExt = _tileSheetCache.get(key);
-				_tileSheetCache.remove(key);
-				temp.destroy();
-			}
+			var temp:TileSheetExt = _tileSheetCache.get(key);
+			_tileSheetCache.remove(key);
+			temp.destroy();
 		}
-		
-		_tileSheetCache = new ObjectHash<BitmapData, TileSheetExt>();
 	}
 	
 	private var _numTiles:Int;
 	
-	private var _tileIDs:Hash<Int>;
+	private var _tileIDs:Map<String, Int>;
 	
 	private function new(bitmap:BitmapData)
 	{
 		super(bitmap);
 		
-		_tileIDs = new Hash<Int>();
+		_tileIDs = new Map<String, Int>();
 		_numTiles = 0;
 	}
 	

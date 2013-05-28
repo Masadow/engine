@@ -14,15 +14,9 @@ import org.flixel.system.layer.TileSheetData;
 class Atlas
 {
 	/**
-	 * Memory managment related var. 
-	 * If if will have value <= 0 then this atlas will be destoyed.
+	 * Storate for all created atlases in current state
 	 */
-	public var _useCount:Int;
-	
-	/**
-	 * Storage for all created atlases in current state
-	 */
-	private static var _atlasCache:Hash<Atlas> = new Hash<Atlas>();
+	private static var _atlasCache:Map<String, Atlas> = new Map<String, Atlas>();
 	
 	public var tempStorage:Array<TempAtlasObj>;
 	
@@ -36,7 +30,7 @@ class Atlas
 	 */
 	public var name:String;
 	
-	public var nodes:Hash<Node>;
+	public var nodes:Map<String, Node>;
 	public var atlasBitmapData:BitmapData;
 	
 	/**
@@ -61,7 +55,7 @@ class Atlas
 	 */
 	private function new(name:String, width:Int, height:Int, borderX:Int = 1, borderY:Int = 1, bitmapData:BitmapData = null) 
 	{
-		nodes = new Hash<Node>();
+		nodes = new Map<String, Node>();
 		this.name = name;
 		
 		if (bitmapData == null)
@@ -82,8 +76,8 @@ class Atlas
 		this.borderY = borderY;
 		
 		_tileSheetData = createTileSheetData(atlasBitmapData);
+		
 		_atlasCache.set(name, this);
-		_useCount = 0;
 	}
 
 	/**
@@ -110,11 +104,9 @@ class Atlas
 	 * Gets atlas from cache or creates new one.
 	 * @param	Key			atlas' key (name)
 	 * @param	BmData		atlas' bitmapdata
-	 * @param	Unique		Optional, whether the atlas should be a unique instance in the atlas cache. Default is false.
-	 * @param	Width		The width of atlas
-	 * @param	Height		The height of atlas
 	 * @return	atlas from cache
 	 */
+	// TODO: redocument this
 	public static function getAtlas(Key:String, BmData:BitmapData, Unique:Bool = false, Width:Int = 0, Height:Int = 0):Atlas
 	{
 		if (BmData == null && Width <= 0 && Height <= 0)
@@ -525,7 +517,7 @@ class Atlas
 		
 		root = new Node(this, new Rectangle(0, 0, rootWidth, rootHeight));
 		atlasBitmapData.fillRect(root.rect, FlxG.TRANSPARENT);
-		nodes = new Hash<Node>();
+		nodes = new Map<String, Node>();
 	}
 	
 	/**
@@ -535,7 +527,7 @@ class Atlas
 	public function clearAndFillWith(bmd:BitmapData):Node
 	{
 		deleteSubtree(root);
-		nodes = new Hash<Node>();
+		nodes = new Map<String, Node>();
 		TileSheetData.removeTileSheet(_tileSheetData);
 		if (!_fromBitmapData)
 		{

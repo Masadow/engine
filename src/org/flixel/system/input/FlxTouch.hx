@@ -9,7 +9,7 @@ import org.flixel.FlxBasic;
 import org.flixel.FlxObject;
 import org.flixel.FlxCamera;
 import org.flixel.FlxPoint;
-import org.flixel.FlxTypedGroup; 
+import org.flixel.FlxTypedGroup;
 
 /**
  * Helper class, contains and track touch points in your game.
@@ -184,13 +184,13 @@ class FlxTouch extends FlxPoint
 	 * Checks to see if some <code>FlxObject</code> overlaps this <code>FlxObject</code> or <code>FlxGroup</code>.
 	 * If the group has a LOT of things in it, it might be faster to use <code>FlxG.overlaps()</code>.
 	 * WARNING: Currently tilemaps do NOT support screen space overlap checks!
-	 * @param ObjectOrGroup The object or group being tested.
-	 * @param Camera Specify which game camera you want. If null getScreenXY() will just grab the first global camera.
-	 * @return Whether or not the two objects overlap.
-	*/
+	 * @param	ObjectOrGroup	The object or group being tested.
+	 * @param	Camera			Specify which game camera you want.  If null getScreenXY() will just grab the first global camera.
+	 * @return	Whether or not the two objects overlap.
+	 */
 	public function overlaps(ObjectOrGroup:FlxBasic, Camera:FlxCamera = null):Bool
 	{
-		if (Std.is(ObjectOrGroup, FlxTypedGroup))
+		if(Std.is(ObjectOrGroup, FlxTypedGroup))
 		{
 			var i:Int = 0;
 			var results:Bool = false;

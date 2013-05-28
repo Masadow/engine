@@ -21,8 +21,8 @@ import org.flixel.system.FlxTilemapBuffer;
  */
 class FlxTilemap extends FlxObject
 {
-	public static inline var imgAuto:String = FlxAssets.imgAuto;
-	public static inline var imgAutoAlt:String = FlxAssets.imgAutoAlt;
+	public static var imgAuto:String = FlxAssets.imgAuto;
+	public static var imgAutoAlt:String = FlxAssets.imgAutoAlt;
 	
 	/**
 	 * No auto-tiling.
@@ -639,29 +639,11 @@ class FlxTilemap extends FlxObject
 					if (tile != null)
 					{
 						if (tile.allowCollisions <= FlxObject.NONE)
-						{
-							#if !neko
 							debugColor = FlxG.BLUE;
-							#else
-							debugColor = FlxG.BLUE.rgb;
-							#end
-						}
 						else if (tile.allowCollisions != FlxObject.ANY)
-						{
-							#if !neko
 							debugColor = FlxG.PINK;
-							#else
-							debugColor = FlxG.PINK.rgb;
-							#end
-						}
 						else
-						{
-							#if !neko
 							debugColor = FlxG.GREEN;
-							#else
-							debugColor = FlxG.GREEN.rgb;
-							#end
-						}
 						
 						// Copied from makeDebugTile
 						var gfx:Graphics = Camera._effectsLayer.graphics;
@@ -2124,15 +2106,15 @@ class FlxTilemap extends FlxObject
 		
 		return tileSprite;
 	}
-	
-	/**
+
+    /**
 	 * Use this method so the tilemap buffers are updated, eg when resizing your game
-	*/
+	 */
     public function updateBuffers():Void
     {
         var i:Int = 0;
         var l:Int;
-		
+
         if (_buffers != null)
         {
             i = 0;
