@@ -464,12 +464,12 @@ class FlxCamera extends FlxBasic
 		_flashRect = new Rectangle(0, 0, width, height);
 		_flashPoint = new Point();
 		
-		_fxFlashColor = FlxG.TRANSPARENT;
+		_fxFlashColor = FlxColorUtils.TRANSPARENT;
 		_fxFlashDuration = 0.0;
 		_fxFlashComplete = null;
 		_fxFlashAlpha = 0.0;
 		
-		_fxFadeColor = FlxG.TRANSPARENT;
+		_fxFadeColor = FlxColorUtils.TRANSPARENT;
 		_fxFadeDuration = 0.0;
 		_fxFadeComplete = null;
 		_fxFadeAlpha = 0.0;
@@ -481,7 +481,7 @@ class FlxCamera extends FlxBasic
 		_fxShakeDirection = 0;
 		
 		#if flash
-		_fill = new BitmapData(width, height, true, FlxG.TRANSPARENT);
+		_fill = new BitmapData(width, height, true, FlxColorUtils.TRANSPARENT);
 		#else
 		_canvas.scrollRect = new Rectangle(0, 0, width, height);
 		

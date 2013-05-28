@@ -124,31 +124,31 @@ class FlxG
 	 * Primarily used in the visual debugger mode for bounding box displays.
 	 * Red is used to indicate an active, movable, solid object.
 	 */
-	static public inline var RED:Int = 0xffff0012;
+	static public inline var RED:Int = FlxColorUtils.RED;
 	/**
 	 * Green is used to indicate solid but immovable objects.
 	 */
-	static public inline var GREEN:Int = 0xff00f225;
+	static public inline var GREEN:Int = FlxColorUtils.GREEN;
 	/**
 	 * Blue is used to indicate non-solid objects.
 	 */
-	static public inline var BLUE:Int = 0xff0090e9;
+	static public inline var BLUE:Int = FlxColorUtils.BLUE;
 	/**
 	 * Pink is used to indicate objects that are only partially solid, like one-way platforms.
 	 */
-	static public inline var PINK:Int = 0xfff01eff;
+	static public inline var PINK:Int = FlxColorUtils.PINK;
 	/**
 	 * White... for white stuff.
 	 */
-	static public inline var WHITE:Int = 0xffffffff;
+	static public inline var WHITE:Int = FlxColorUtils.WHITE;
 	/**
 	 * And black too.
 	 */
-	static public inline var BLACK:Int = 0xff000000;
+	static public inline var BLACK:Int = FlxColorUtils.BLACK;
 	/**
 	 * Totally transparent color. Usefull for creating transparent BitmapData
 	 */
-	static public inline var TRANSPARENT:Int = 0x00000000;
+	static public inline var TRANSPARENT:Int = FlxColorUtils.TRANSPARENT;
 	
 	/**
 	 * Useful for rad-to-deg and deg-to-rad conversion.
@@ -164,6 +164,14 @@ class FlxG
 	 * Handy shared variable for implementing your own pause behavior.
 	 */
 	static public var paused:Bool;
+	/**
+	 * Whether the game should be paused when focus is lost or not. 
+	 * Use FLX_NO_FOCUS_LOST_SCREEN if you only want to get rid of the default
+	 * pause screen. Override onFocus() and onFocusLost() for your own 
+	 * behaviour in your state
+	 * @default true
+	 */
+	static public var autoPause:Bool;
 	/**
 	 * Whether you are running in Debug or Release mode.
 	 * Set automatically by <code>FlxPreloader</code> during startup.
@@ -216,21 +224,6 @@ class FlxG
 	 * The global random number generator seed (for deterministic behavior in recordings and saves).
 	 */
 	static public var globalSeed:Float;
-	/**
-	 * <code>FlxG.levels</code> and <code>FlxG.scores</code> are generic
-	 * global variables that can be used for various cross-state stuff.
-	 */
-	static public var levels:Array<Dynamic>;
-	static public var level:Int;
-	static public var scores:Array<Dynamic>;
-	static public var score:Int;
-	/**
-	 * <code>FlxG.saves</code> is a generic bucket for storing
-	 * FlxSaves so you can access them whenever you want.
-	 */
-	static public var saves:Array<Dynamic>; 
-	static public var save:Int;
-	
 	/**
 	 * A handy container for a background music object.
 	 */
@@ -303,6 +296,26 @@ class FlxG
 	 * A reference to a <code>FlxKeyboard</code> object.  Important for input!
 	 */
 	static public var keys:FlxKeyboard;
+	/**
+	 * The key codes used to open the debugger. (via nme.ui.Keyboard)
+	 * @default [192, 220]
+	 */
+	static public var keyDebugger:Array<Int>;
+	/**
+	 * The key codes used to increase volume. (via nme.ui.Keyboard)
+	 * @default [107, 187]
+	 */
+	static public var keyVolumeUp:Array<Int>;
+	/**
+	 * The key codes used to decrease volume. (via nme.ui.Keyboard)
+	 * @default [109, 189]
+	 */
+	static public var keyVolumeDown:Array<Int>;
+	/**
+	 * The key codes used to mute / unmute the game. (via nme.ui.Keyboard)
+	 * @default [48, 96]
+	 */
+	static public var keyMute:Array<Int>;
 	#end
 
 	#if !FLX_NO_TOUCH
@@ -1102,7 +1115,7 @@ class FlxG
 				FrameWidth = (FrameWidth == 0) ? bd.width : FrameWidth;
 				FrameHeight = (FrameHeight == 0) ? bd.height : FrameHeight;
 				
-				var tempBitmap:BitmapData = new BitmapData(bd.width + numHorizontalFrames, bd.height + numVerticalFrames, true, FlxG.TRANSPARENT);
+				var tempBitmap:BitmapData = new BitmapData(bd.width + numHorizontalFrames, bd.height + numVerticalFrames, true, FlxColorUtils.TRANSPARENT);
 				
 				var tempRect:Rectangle = new Rectangle(0, 0, FrameWidth, FrameHeight);
 				var tempPoint:Point = new Point();
@@ -1455,7 +1468,7 @@ class FlxG
 	{
 		if (FlxG.camera == null)
 		{
-			return FlxG.BLACK;
+			return FlxColorUtils.BLACK;
 		}
 		else
 		{
@@ -1653,9 +1666,6 @@ class FlxG
 		#else
 		FlxG.mobile = false;
 		#end
-
-		FlxG.levels = new Array();
-		FlxG.scores = new Array();
 		
 		#if !FLX_NO_DEBUG
 		log = Reflect.makeVarArgs(_log);
@@ -1679,10 +1689,6 @@ class FlxG
 		FlxG.clearBitmapCache();
 		FlxG.resetInput();
 		FlxG.destroySounds(true);
-		FlxG.levels = [];
-		FlxG.scores = [];
-		FlxG.level = 0;
-		FlxG.score = 0;
 		FlxG.paused = false;
 		FlxG.timeScale = 1.0;
 		FlxG.elapsed = 0;
